@@ -1,0 +1,30 @@
+backend:
+  name: github
+  repo: TU_USUARIO/tallerzur   # ← cambia esto por tu usuario/repo de GitHub
+  branch: main
+  base_url: https://TU-OAUTH-PROVIDER.vercel.app  # ← proveedor OAuth (ver README)
+
+media_folder: "public/images/blog"
+public_folder: "/images/blog"
+
+locale: es
+
+collections:
+  - name: "blog"
+    label: "Blog"
+    folder: "src/content/blog"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Título", name: "title", widget: "string" }
+      - { label: "Descripción (SEO)", name: "description", widget: "text" }
+      - { label: "Fecha de publicación", name: "pubDate", widget: "datetime" }
+      - label: "Servicio relacionado"
+        name: "service"
+        widget: "select"
+        options:
+          - { label: "Desarrollo web", value: "desarrollo" }
+          - { label: "Mantenimiento", value: "mantenimiento" }
+          - { label: "Servicios web", value: "servicios" }
+      - { label: "Imagen (opcional)", name: "image", widget: "image", required: false }
+      - { label: "Contenido", name: "body", widget: "markdown" }

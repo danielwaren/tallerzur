@@ -1,0 +1,194 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+  type?: string;
+}
+const {
+  title,
+  description,
+  image = '/og-cover.jpg',
+  type = 'website',
+} = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL(image, Astro.site);
+
+const keywords = [
+  'desarrollo web Aysén',
+  'páginas web Puerto Cisnes',
+  'diseño web Coyhaique',
+  'agencia digital Patagonia',
+  'sitios web para pymes',
+  'mantenimiento web Aysén',
+  'tiendas online Coyhaique',
+  'reservas online hostales',
+  'SEO local Aysén',
+].join(', ');
+---
+<!doctype html>
+<html lang="es-CL" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="keywords" content={keywords} />
+    <meta name="author" content="TallerZur" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#0A0F0D" />
+    <link rel="canonical" href={canonical} />
+
+    <!-- Geo / local SEO -->
+    <meta name="geo.region" content="CL-AI" />
+    <meta name="geo.placename" content="Puerto Cisnes, Aysén" />
+    <meta name="geo.position" content="-44.7427;-72.6926" />
+    <meta name="ICBM" content="-44.7427, -72.6926" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content={type} />
+    <meta property="og:locale" content="es_CL" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="TallerZur" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <!-- Fonts: Bricolage Grotesque (display) + Inter (body) + JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "ProfessionalService",
+      "@id": "https://tallerzur.cl/#business",
+      "name": "TallerZur",
+      "image": "https://tallerzur.cl/og-cover.jpg",
+      "url": "https://tallerzur.cl",
+      "email": "hola@tallerzur.cl",
+      "description": "Desarrollo web, mantenimiento y servicios digitales para pymes, hostales y restaurantes de la Región de Aysén, Patagonia chilena.",
+      "priceRange": "$$",
+      "areaServed": [
+        { "@type": "City", "name": "Puerto Cisnes" },
+        { "@type": "City", "name": "Coyhaique" },
+        { "@type": "City", "name": "Puerto Aysén" },
+        { "@type": "AdministrativeArea", "name": "Región de Aysén" },
+        { "@type": "Country", "name": "Chile" }
+      ],
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Puerto Cisnes",
+        "addressRegion": "Aysén",
+        "addressCountry": "CL"
+      },
+      "geo": { "@type": "GeoCoordinates", "latitude": -44.7427, "longitude": -72.6926 },
+      "knowsLanguage": "es-CL",
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Servicios web",
+        "itemListElement": [
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Desarrollo web", "description": "Sitios, landing pages y tiendas online a medida para pymes de Aysén." } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Mantenimiento web", "description": "Monitoreo, respaldos, seguridad y soporte continuo." } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Servicios digitales", "description": "Sistemas de reserva, catálogos y pasarelas de pago." } }
+        ]
+      }
+    })} />
+    <slot name="head" />
+  </head>
+  <body class="bg-abyss text-bone font-body antialiased selection:bg-lima/30 selection:text-bone overflow-x-hidden">
+    <slot />
+    <script>
+      // Spotlight: la luz de cada card sigue el cursor
+      const fine = window.matchMedia('(pointer: fine)').matches;
+      if (fine) {
+        document.addEventListener('pointermove', (e) => {
+          const t = (e.target as HTMLElement)?.closest<HTMLElement>('.spotlight');
+          if (!t) return;
+          const r = t.getBoundingClientRect();
+          t.style.setProperty('--mx', `${e.clientX - r.left}px`);
+          t.style.setProperty('--my', `${e.clientY - r.top}px`);
+        }, { passive: true });
+      }
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  html { scrollbar-gutter: stable; }
+
+  body::-webkit-scrollbar { width: 10px; }
+  body::-webkit-scrollbar-track { background: #0A0F0D; }
+  body::-webkit-scrollbar-thumb {
+    background: #2D5A3D;
+    border-radius: 999px;
+    border: 2px solid #0A0F0D;
+  }
+  body::-webkit-scrollbar-thumb:hover { background: #3a7350; }
+
+  /* Bricolage benefits from slightly tighter tracking on display sizes */
+  .font-display { letter-spacing: -0.02em; }
+
+  /* ── Glass surface (used across bento cards) ─────────────────────── */
+  .glass {
+    background: linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .glass-hover {
+    transition: border-color .4s var(--ease-out-expo), transform .4s var(--ease-out-expo),
+      box-shadow .4s var(--ease-out-expo);
+  }
+  .glass-hover:hover {
+    border-color: rgba(124,252,138,0.35);
+    box-shadow: 0 30px 70px -30px rgba(0,0,0,.8), 0 0 30px -10px rgba(124,252,138,.25);
+  }
+
+  /* ── Cursor-follow spotlight for bento cards ─────────────────────── */
+  .spotlight { position: relative; }
+  .spotlight::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(124,252,138,0.10), transparent 45%);
+    opacity: 0;
+    transition: opacity .4s ease;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .spotlight:hover::before { opacity: 1; }
+  .spotlight > * { position: relative; z-index: 1; }
+
+  /* Animated gradient text for accents */
+  .text-gradient {
+    background: linear-gradient(120deg, #7CFC8A 0%, #E8E4DC 50%, #7CFC8A 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  }
+</style>

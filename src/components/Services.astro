@@ -1,0 +1,98 @@
+---
+const services = [
+  {
+    tag: 'desarrollo',
+    title: 'Desarrollo web',
+    desc: 'Sitios, landing pages y tiendas online a medida. Rápidos, seguros y pensados para vender desde el primer día — incluso con la señal del sur.',
+    items: ['Landing pages', 'Sitios web', 'Tiendas online', 'Apps web'],
+    img: 'https://images.unsplash.com/photo-1547658719-da2b51169166?q=80&w=1000&auto=format&fit=crop',
+  },
+  {
+    tag: 'mantenimiento',
+    title: 'Mantenimiento',
+    desc: 'Tu sitio siempre arriba: actualizaciones, respaldos, seguridad y soporte directo, sin tickets eternos.',
+    items: ['Monitoreo 24/7', 'Respaldos', 'Seguridad', 'Soporte WhatsApp'],
+    img: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=1000&auto=format&fit=crop',
+  },
+  {
+    tag: 'servicios',
+    title: 'Servicios digitales',
+    desc: 'Herramientas que resuelven problemas reales: reservas, catálogos, pagos y todo lo que tu negocio necesita para crecer.',
+    items: ['Reservas', 'Catálogos', 'Pagos online', 'Correo corporativo'],
+    img: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1000&auto=format&fit=crop',
+  },
+];
+
+const icons: Record<string, string> = {
+  desarrollo:
+    '<path d="m8 9-3 3 3 3M16 9l3 3-3 3M14 6l-4 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  mantenimiento:
+    '<path d="M12 3 4 6v5c0 4.5 3.2 7.9 8 9 4.8-1.1 8-4.5 8-9V6l-8-3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  servicios:
+    '<rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/>',
+};
+const arrow = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+---
+<section id="servicios" class="px-5 md:px-10 lg:px-16 py-24 md:py-32">
+  <div data-line class="h-px bg-gradient-to-r from-lima/50 via-patagonia/40 to-transparent mb-12"></div>
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
+    <div>
+      <p data-reveal class="font-mono text-lima text-xs tracking-widest uppercase">// qué hacemos</p>
+      <h2 data-words class="mt-3 font-display text-4xl md:text-5xl lg:text-6xl font-bold max-w-2xl leading-[1.05]">
+        Tres servicios. Cero humo.
+      </h2>
+    </div>
+    <p data-reveal class="font-mono text-sm text-moss max-w-xs md:text-right">
+      De la idea al sitio en producción — sin intermediarios, hablando con quien programa.
+    </p>
+  </div>
+
+  <!-- Galería: 3 cards uniformes -->
+  <div data-stagger class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+    {services.map((s) => (
+      <article class="spotlight glass glass-hover group relative flex flex-col overflow-hidden rounded-4xl">
+        <!-- Visual -->
+        <div class="relative h-44 overflow-hidden">
+          <img src={s.img} alt={s.title} loading="lazy" class="h-full w-full object-cover opacity-40 transition-transform duration-700 group-hover:scale-105 group-hover:opacity-55" />
+          <div class="absolute inset-0 bg-gradient-to-t from-abyss via-abyss/60 to-transparent"></div>
+          <span class="absolute top-4 left-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-abyss/70 backdrop-blur-sm border border-lima/30 text-lima group-hover:bg-lima group-hover:text-abyss transition-colors duration-300">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" set:html={icons[s.tag]} />
+          </span>
+          <span class="absolute bottom-4 left-5 font-mono text-[11px] tracking-widest uppercase text-moss">~/{s.tag}</span>
+        </div>
+
+        <!-- Body -->
+        <div class="relative flex flex-col flex-1 p-7">
+          <h3 class="font-display text-2xl font-bold text-bone group-hover:text-lima transition-colors duration-300">{s.title}</h3>
+          <p class="mt-3 text-moss text-sm leading-relaxed">{s.desc}</p>
+          <ul class="mt-5 grid grid-cols-2 gap-2.5">
+            {s.items.map(item => (
+              <li class="flex items-center gap-2 text-sm text-bone/80">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 text-lima"><path d="m5 12 5 5 9-11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                {item}
+              </li>
+            ))}
+          </ul>
+          <a href="/#contacto" class="mt-auto pt-7 self-start inline-flex items-center gap-2 font-mono text-sm text-lima hover:gap-3 transition-all duration-200">
+            Cotizar este servicio <Fragment set:html={arrow} />
+          </a>
+        </div>
+      </article>
+    ))}
+  </div>
+
+  <!-- CTA banner -->
+  <div class="spotlight glass glass-hover relative overflow-hidden rounded-4xl bg-lima/[0.04] mt-4 md:mt-5">
+    <div class="relative flex flex-col sm:flex-row items-start sm:items-center gap-6 p-7 md:p-9">
+      <div class="flex-1">
+        <p class="font-mono text-[11px] tracking-widest uppercase text-lima">// ¿no sabes cuál necesitas?</p>
+        <h3 class="mt-3 font-display text-2xl md:text-3xl font-bold leading-tight">
+          Te ayudamos a elegir. <span class="text-moss">Gratis y sin compromiso.</span>
+        </h3>
+      </div>
+      <a href="/#contacto" data-magnetic class="flex-shrink-0 rounded-full bg-lima px-7 py-3.5 font-display font-medium text-abyss transition hover:shadow-glow hover:scale-105">
+        <span data-magnetic-inner class="flex items-center gap-2">Conversemos <Fragment set:html={arrow} /></span>
+      </a>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,227 @@
+---
+import Base from '../../layouts/Base.astro';
+import Nav from '../../components/Nav.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts.map((post) => ({ params: { slug: post.slug }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await post.render();
+const fmt = post.data.pubDate.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' });
+
+// Related posts (same service, excluding current)
+const allPosts = await getCollection('blog');
+const related = allPosts
+  .filter(p => p.slug !== post.slug && p.data.service === post.data.service)
+  .slice(0, 2);
+
+const serviceColors: Record<string, string> = {
+  desarrollo: 'text-lima',
+  mantenimiento: 'text-patagonia',
+  servicios: 'text-bone',
+};
+const serviceColor = serviceColors[post.data.service] ?? 'text-lima';
+
+// Estimated read time
+const wordCount = (post.body ?? '').split(/\s+/).length;
+const readTime = Math.max(1, Math.ceil(wordCount / 200));
+
+const articleLd = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": post.data.title,
+  "description": post.data.description,
+  "datePublished": post.data.pubDate.toISOString(),
+  "inLanguage": "es-CL",
+  "image": post.data.image,
+  "author": { "@type": "Organization", "name": "TallerZur", "url": "https://tallerzur.cl" },
+  "publisher": { "@type": "Organization", "name": "TallerZur", "url": "https://tallerzur.cl" },
+  "mainEntityOfPage": `https://tallerzur.cl/blog/${post.slug}/`,
+  "about": ["desarrollo web", "pymes", "Región de Aysén"],
+};
+---
+<Base
+  title={`${post.data.title} — TallerZur`}
+  description={post.data.description}
+  image={post.data.image}
+  type="article"
+>
+  <Nav />
+  <script type="application/ld+json" set:html={JSON.stringify(articleLd)} slot="head" />
+
+  <main class="min-h-screen">
+
+    <!-- Hero image + article header -->
+    <header class="relative pt-16">
+      {post.data.image && (
+        <div class="relative w-full h-[50vh] md:h-[65vh] overflow-hidden">
+          <img
+            src={post.data.image}
+            alt={post.data.title}
+            class="w-full h-full object-cover"
+            loading="eager"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-abyss via-abyss/40 to-transparent"></div>
+        </div>
+      )}
+
+      <!-- Article meta — overlaid on image or standalone -->
+      <div class={`${post.data.image ? 'relative -mt-40 md:-mt-56' : 'pt-24'} px-5 md:px-10 lg:px-16 pb-12`}>
+        <div class="max-w-3xl mx-auto">
+          <!-- Kicker -->
+          <div class="flex flex-wrap items-center gap-3 mb-6">
+            <a href="/blog" class="font-mono text-xs text-moss hover:text-lima transition">← todos los artículos</a>
+            <span class="w-1 h-1 rounded-full bg-moss/50"></span>
+            <span class={`font-mono text-xs uppercase tracking-widest ${serviceColor}`}>~/{post.data.service}</span>
+          </div>
+
+          <!-- Title -->
+          <h1 class="font-display text-3xl md:text-5xl lg:text-6xl font-bold leading-[1.06] text-bone">
+            {post.data.title}
+          </h1>
+
+          <!-- Deck (description) -->
+          <p class="mt-5 text-moss text-lg md:text-xl leading-relaxed max-w-2xl">
+            {post.data.description}
+          </p>
+
+          <!-- Byline -->
+          <div class="mt-8 flex flex-wrap items-center gap-6 pb-8 border-b border-moss/20">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-patagonia flex items-center justify-center font-display font-bold text-sm text-lima">TZ</div>
+              <div>
+                <p class="font-display font-medium text-sm text-bone">TallerZur</p>
+                <p class="font-mono text-xs text-moss">Puerto Cisnes, Aysén</p>
+              </div>
+            </div>
+            <div class="h-5 w-px bg-moss/30 hidden sm:block"></div>
+            <time datetime={post.data.pubDate.toISOString()} class="font-mono text-xs text-moss">{fmt}</time>
+            <div class="h-5 w-px bg-moss/30 hidden sm:block"></div>
+            <span class="font-mono text-xs text-moss">{readTime} min de lectura</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Article body -->
+    <article class="px-5 md:px-10 lg:px-16 pb-24">
+      <div class="max-w-3xl mx-auto">
+        <div class="prose-tallerzur">
+          <Content />
+        </div>
+
+        <!-- Tags -->
+        <div class="mt-14 pt-8 border-t border-moss/20 flex flex-wrap gap-2">
+          <span class="font-mono text-xs text-moss">Temas:</span>
+          <span class="font-mono text-xs text-lima bg-lima/10 px-3 py-1 rounded-full">{post.data.service}</span>
+          <span class="font-mono text-xs text-moss bg-forest/50 px-3 py-1 rounded-full">pymes</span>
+          <span class="font-mono text-xs text-moss bg-forest/50 px-3 py-1 rounded-full">Aysén</span>
+        </div>
+
+        <!-- CTA box -->
+        <div class="mt-12 rounded-3xl border border-lima/25 bg-gradient-to-br from-forest/50 to-patagonia/20 p-8 md:p-10">
+          <p class="font-mono text-lima text-xs tracking-widest uppercase mb-3">¿Necesitas esto para tu negocio?</p>
+          <p class="font-display text-2xl md:text-3xl font-bold leading-snug">
+            Hacemos exactamente esto<br />para pymes de Aysén.
+          </p>
+          <p class="mt-4 text-moss leading-relaxed">
+            Sin agencias intermediarias, sin costos inflados. Directo desde Puerto Cisnes.
+          </p>
+          <div class="mt-7 flex flex-wrap gap-3">
+            <a href="/#contacto" class="rounded-full bg-lima px-7 py-3 font-display font-medium text-abyss transition hover:scale-105 hover:shadow-[0_0_30px_rgba(124,252,138,0.4)]">
+              Conversemos →
+            </a>
+            <a href="/blog" class="rounded-full border border-moss/40 px-7 py-3 font-display text-bone transition hover:border-lima hover:text-lima">
+              Ver más artículos
+            </a>
+          </div>
+        </div>
+
+        <!-- Related posts -->
+        {related.length > 0 && (
+          <div class="mt-16">
+            <p class="font-mono text-xs text-moss uppercase tracking-widest mb-6">Artículos relacionados</p>
+            <div class="grid sm:grid-cols-2 gap-5">
+              {related.map(p => (
+                <a href={`/blog/${p.slug}/`} class="spotlight glass glass-hover group flex gap-4 p-5 rounded-2xl transition-all">
+                  {p.data.image && (
+                    <img src={p.data.image} alt={p.data.title} class="w-20 h-20 object-cover rounded-xl flex-shrink-0" loading="lazy" />
+                  )}
+                  <div>
+                    <span class="font-mono text-xs text-lima">~/{p.data.service}</span>
+                    <h3 class="mt-1 font-display font-bold text-sm group-hover:text-lima transition line-clamp-2">{p.data.title}</h3>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </article>
+  </main>
+</Base>
+
+<style is:global>
+  .prose-tallerzur h2 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.4rem, 3vw, 1.75rem);
+    margin: 2.5rem 0 1rem;
+    color: #E8E4DC;
+    line-height: 1.2;
+  }
+  .prose-tallerzur h3 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin: 2rem 0 0.75rem;
+    color: #E8E4DC;
+  }
+  .prose-tallerzur p {
+    margin: 1.25rem 0;
+    line-height: 1.85;
+    color: #B8BCB4;
+    font-size: 1.05rem;
+  }
+  .prose-tallerzur > p:first-child::first-letter {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 4rem;
+    font-weight: 700;
+    line-height: 0.85;
+    float: left;
+    margin-right: 0.1em;
+    margin-top: 0.1em;
+    color: #7CFC8A;
+  }
+  .prose-tallerzur ul, .prose-tallerzur ol {
+    margin: 1.25rem 0;
+    padding-left: 1.5rem;
+    color: #B8BCB4;
+    line-height: 1.85;
+  }
+  .prose-tallerzur ul { list-style: none; }
+  .prose-tallerzur ul li { position: relative; padding-left: 1.2em; }
+  .prose-tallerzur ul li::before { content: '→'; position: absolute; left: 0; color: #7CFC8A; }
+  .prose-tallerzur ol { list-style: decimal; }
+  .prose-tallerzur ol li::marker { color: #7CFC8A; font-weight: bold; }
+  .prose-tallerzur strong { color: #E8E4DC; font-weight: 700; }
+  .prose-tallerzur a { color: #7CFC8A; text-decoration: underline; text-underline-offset: 3px; }
+  .prose-tallerzur a:hover { text-decoration: none; }
+  .prose-tallerzur blockquote {
+    border-left: 3px solid #7CFC8A;
+    padding: 0.5rem 1.5rem;
+    margin: 2rem 0;
+    background: rgba(26, 40, 32, 0.5);
+    border-radius: 0 12px 12px 0;
+    font-style: italic;
+  }
+  .prose-tallerzur blockquote p { color: #E8E4DC; font-size: 1.15rem; margin: 0; }
+  .prose-tallerzur hr {
+    border: none;
+    border-top: 1px solid rgba(107, 123, 112, 0.3);
+    margin: 2.5rem 0;
+  }
+</style>

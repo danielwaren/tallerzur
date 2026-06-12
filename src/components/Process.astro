@@ -1,0 +1,64 @@
+---
+const steps = [
+  {
+    num: '01',
+    title: 'Conversamos',
+    desc: 'Una llamada o un WhatsApp. Te preguntamos qué necesita tu negocio, quiénes son tus clientes y cuál es el mayor problema que quieres resolver.',
+    icon: '<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4L3 21l1.1-4A8.4 8.4 0 1 1 21 11.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  },
+  {
+    num: '02',
+    title: 'Diseñamos juntos',
+    desc: 'Te mostramos una propuesta visual antes de escribir una línea de código. Iteramos hasta que el diseño refleje tu negocio, no uno genérico.',
+    icon: '<path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 2-2 0-1.5 1-2 2-2h2a3 3 0 0 0 3-3 8 8 0 0 0-9-9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="7.5" cy="11" r="1.1" fill="currentColor"/><circle cx="12" cy="7.5" r="1.1" fill="currentColor"/><circle cx="16.5" cy="11" r="1.1" fill="currentColor"/>',
+  },
+  {
+    num: '03',
+    title: 'Construimos rápido',
+    desc: 'Desarrollamos con tecnología moderna y te vamos mostrando el avance. Sin sorpresas al final, sin "está en proceso" eternamente.',
+    icon: '<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+  },
+  {
+    num: '04',
+    title: 'Lanzamos y cuidamos',
+    desc: 'Tu sitio sale al aire y nosotros seguimos ahí. Monitoreo, actualizaciones y soporte directo por WhatsApp. Sin contratos interminables.',
+    icon: '<path d="M5 15c-1.5 2-2 5-2 5s3-.5 5-2m-3-3c0-5 4-11 12-11 0 8-6 12-11 12l-1-1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="14.5" cy="9.5" r="1.4" stroke="currentColor" stroke-width="1.8"/>',
+  },
+];
+---
+<section id="proceso" class="px-5 md:px-10 lg:px-16 py-24 md:py-32 bg-forest/10">
+  <div data-line class="h-px bg-gradient-to-r from-lima/50 via-patagonia/40 to-transparent mb-14"></div>
+  <p data-reveal class="font-mono text-lima text-xs tracking-widest uppercase">// cómo trabajamos</p>
+  <h2 data-words class="mt-3 font-display text-4xl md:text-5xl lg:text-6xl font-bold max-w-xl leading-[1.05]">
+    Simple, directo, sin burocracia.
+  </h2>
+
+  <div data-stagger class="mt-14 grid gap-4 md:gap-5 sm:grid-cols-2 lg:grid-cols-4">
+    {steps.map((step) => (
+      <div class="spotlight glass glass-hover group relative overflow-hidden rounded-4xl p-7 flex flex-col">
+        <div class="flex items-center justify-between mb-6">
+          <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-lima/10 border border-lima/30 text-lima group-hover:bg-lima group-hover:text-abyss transition-colors duration-300">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" set:html={step.icon} />
+          </span>
+          <span class="font-display text-4xl font-bold text-white/5 group-hover:text-lima/20 transition-colors">{step.num}</span>
+        </div>
+        <h3 class="font-display text-xl font-bold group-hover:text-lima transition">{step.title}</h3>
+        <p class="mt-3 text-moss text-sm leading-relaxed">{step.desc}</p>
+      </div>
+    ))}
+  </div>
+
+  <!-- CTA inline -->
+  <div data-reveal class="mt-10 spotlight glass glass-hover rounded-4xl flex flex-col sm:flex-row items-start sm:items-center gap-4 p-8 bg-lima/[0.04]">
+    <div class="flex-1">
+      <p class="font-display text-lg font-bold">¿Tienes un proyecto en mente?</p>
+      <p class="text-moss text-sm mt-1">El paso 1 es gratis y sin compromiso. Una conversación de 20 minutos puede clarificarlo todo.</p>
+    </div>
+    <a href="/#contacto" data-magnetic class="flex-shrink-0 rounded-full bg-lima px-7 py-3 font-display font-medium text-abyss transition hover:shadow-glow hover:scale-105">
+      <span data-magnetic-inner class="flex items-center gap-2">
+        Empecemos
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </a>
+  </div>
+</section>

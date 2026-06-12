@@ -1,0 +1,135 @@
+---
+import Weather from './Weather.astro';
+
+const links = [
+  { href: '/#servicios', label: 'servicios', spy: 'servicios' },
+  { href: '/#portafolio', label: 'trabajos', spy: 'portafolio' },
+  { href: '/#proceso', label: 'proceso', spy: 'proceso' },
+  { href: '/blog', label: 'blog', spy: '' },
+];
+---
+<!-- Scroll progress bar -->
+<div id="scroll-progress" class="fixed top-0 left-0 z-[60] h-0.5 w-0 bg-gradient-to-r from-patagonia via-lima to-lima origin-left"></div>
+
+<!-- Top bar: marca + clima + contacto -->
+<nav id="nav" class="fixed top-0 z-50 w-full transition-all duration-300">
+  <div id="nav-inner" class="mx-auto flex items-center justify-between gap-4 px-5 md:px-10 py-3.5 transition-all duration-300 border-b border-white/0">
+    <a href="/" class="font-display font-bold text-xl tracking-tight flex items-center gap-2 group">
+      <span class="relative flex h-2.5 w-2.5">
+        <span class="absolute inline-flex h-full w-full rounded-full bg-lima/60 animate-pulse-ring"></span>
+        <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-lima"></span>
+      </span>
+      Taller<span class="text-lima">Zur</span>
+    </a>
+
+    <div class="flex items-center gap-3">
+      <Weather variant="full" />
+
+      <a
+        href="/#contacto"
+        data-magnetic
+        class="hidden md:inline-flex rounded-full bg-lima/10 border border-lima/40 px-5 py-1.5 font-display font-medium text-lima text-sm transition hover:bg-lima hover:text-abyss hover:shadow-glow-sm"
+      >
+        <span data-magnetic-inner>contacto</span>
+      </a>
+
+      <button id="menu-btn" aria-label="Abrir menú" aria-expanded="false" class="md:hidden flex flex-col gap-1.5 p-2 group">
+        <span class="hamburger-line block w-6 h-0.5 bg-bone transition-all duration-300"></span>
+        <span class="hamburger-line block w-6 h-0.5 bg-bone transition-all duration-300"></span>
+        <span class="hamburger-line block w-4 h-0.5 bg-bone transition-all duration-300 self-end group-hover:w-6"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile drawer -->
+  <div id="mobile-menu" class="md:hidden overflow-hidden max-h-0 transition-all duration-500 ease-out">
+    <div class="px-6 py-7 flex flex-col gap-5 bg-abyss/95 backdrop-blur-xl border-t border-white/5">
+      {links.map(l => (
+        <a href={l.href} class="mobile-link font-mono text-lg text-moss hover:text-lima transition">{l.label}</a>
+      ))}
+      <a href="/#contacto" class="mobile-link mt-2 self-start rounded-full bg-lima px-7 py-3 font-display font-medium text-abyss">contacto</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Vertical side nav (md+) -->
+<nav id="side-nav" aria-label="Secciones" class="fixed right-0 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col items-end gap-1 pr-4 lg:pr-6">
+  {links.map(l => (
+    <a href={l.href} data-spy={l.spy} class="side-link group flex items-center justify-end gap-3 py-2.5">
+      <span class="side-label font-mono text-[11px] uppercase tracking-widest text-lima opacity-0 translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 whitespace-nowrap">
+        {l.label}
+      </span>
+      <span class="side-bar block h-px w-7 bg-moss/40 transition-all duration-300 group-hover:w-12 group-hover:bg-lima"></span>
+    </a>
+  ))}
+</nav>
+
+<style>
+  .side-link.active .side-label { opacity: 1; transform: translateX(0); }
+  .side-link.active .side-bar { width: 3rem; background: #7CFC8A; }
+</style>
+
+<script>
+  // ── Mobile drawer ──────────────────────────────────────────────
+  const btn = document.getElementById('menu-btn')!;
+  const menu = document.getElementById('mobile-menu')!;
+  const lines = document.querySelectorAll<HTMLElement>('.hamburger-line');
+  let open = false;
+
+  const setOpen = (v: boolean) => {
+    open = v;
+    btn.setAttribute('aria-expanded', String(v));
+    if (v) {
+      menu.style.maxHeight = menu.scrollHeight + 'px';
+      lines[0].style.transform = 'translateY(8px) rotate(45deg)';
+      lines[1].style.opacity = '0';
+      lines[2].style.transform = 'translateY(-8px) rotate(-45deg)';
+      lines[2].style.width = '24px';
+    } else {
+      menu.style.maxHeight = '0';
+      lines[0].style.transform = '';
+      lines[1].style.opacity = '1';
+      lines[2].style.transform = '';
+    }
+  };
+
+  btn.addEventListener('click', () => setOpen(!open));
+  menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setOpen(false)));
+
+  // ── Glass + shrink + scroll progress ───────────────────────────
+  const inner = document.getElementById('nav-inner')!;
+  const progress = document.getElementById('scroll-progress')!;
+  const onScroll = () => {
+    const y = window.scrollY;
+    if (y > 30) {
+      inner.classList.add('bg-abyss/70', 'backdrop-blur-xl', 'border-white/10', 'py-2.5');
+      inner.classList.remove('py-3.5');
+    } else {
+      inner.classList.remove('bg-abyss/70', 'backdrop-blur-xl', 'border-white/10', 'py-2.5');
+      inner.classList.add('py-3.5');
+    }
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    progress.style.width = h > 0 ? `${(y / h) * 100}%` : '0%';
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // ── Scroll-spy for side nav ────────────────────────────────────
+  const sideLinks = Array.from(document.querySelectorAll<HTMLElement>('.side-link'));
+  const sections = sideLinks
+    .map(a => a.getAttribute('data-spy'))
+    .filter((id): id is string => !!id)
+    .map(id => document.getElementById(id))
+    .filter((el): el is HTMLElement => !!el);
+
+  if (sections.length) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          sideLinks.forEach(a => a.classList.toggle('active', a.getAttribute('data-spy') === entry.target.id));
+        }
+      });
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    sections.forEach(s => io.observe(s));
+  }
+</script>

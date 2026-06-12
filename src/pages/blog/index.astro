@@ -1,0 +1,123 @@
+---
+import Base from '../../layouts/Base.astro';
+import Nav from '../../components/Nav.astro';
+import ScrollFX from '../../components/ScrollFX.tsx';
+import { getCollection } from 'astro:content';
+
+const allPosts = (await getCollection('blog'))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const featured = allPosts[0];
+const rest = allPosts.slice(1);
+
+const fmt = (d: Date) => d.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' });
+
+const serviceColors: Record<string, string> = {
+  desarrollo: 'text-lima',
+  mantenimiento: 'text-patagonia',
+  servicios: 'text-bone',
+};
+---
+<Base
+  title="Blog — TallerZur | Guías de desarrollo web para pymes de Aysén"
+  description="Artículos sobre desarrollo web, mantenimiento y herramientas digitales para pequeños negocios de la Región de Aysén."
+>
+  <Nav />
+  <ScrollFX client:idle />
+
+  <main class="min-h-screen">
+
+    <!-- Page header -->
+    <div class="px-5 md:px-10 lg:px-16 pt-32 pb-16">
+      <p data-reveal class="font-mono text-lima text-xs tracking-widest uppercase">// blog</p>
+      <h1 data-words class="mt-3 font-display text-4xl md:text-6xl lg:text-7xl font-bold max-w-3xl leading-[1.05]">
+        Guías para tu negocio digital
+      </h1>
+      <p data-reveal class="mt-5 text-moss text-lg max-w-xl">
+        Sin relleno, sin jerga. Solo información útil para pymes de la Región de Aysén.
+      </p>
+      <div data-line class="h-px bg-gradient-to-r from-lima/50 via-patagonia/40 to-transparent mt-12"></div>
+    </div>
+
+    <div class="px-5 md:px-10 lg:px-16 pb-24">
+
+      <!-- Featured post -->
+      {featured && (
+        <a
+          data-reveal
+          href={`/blog/${featured.slug}/`}
+          class="spotlight glass glass-hover group block mb-16 rounded-4xl overflow-hidden"
+        >
+          <div class="flex flex-col lg:flex-row">
+            {featured.data.image && (
+              <div class="lg:w-1/2 h-64 lg:h-auto overflow-hidden relative">
+                <img
+                  src={featured.data.image}
+                  alt={featured.data.title}
+                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  loading="eager"
+                />
+                <div class="absolute top-5 left-5 font-mono text-xs bg-abyss/80 backdrop-blur-sm text-lima px-3 py-1.5 rounded-full">
+                  Artículo destacado
+                </div>
+              </div>
+            )}
+            <div class="flex-1 p-8 md:p-12 flex flex-col justify-center">
+              <div class="flex flex-wrap items-center gap-3 font-mono text-xs mb-4">
+                <span class={serviceColors[featured.data.service] ?? 'text-lima'}>~/{featured.data.service}</span>
+                <span class="text-moss">{fmt(featured.data.pubDate)}</span>
+              </div>
+              <h2 class="font-display text-2xl md:text-3xl lg:text-4xl font-bold leading-tight group-hover:text-lima transition">
+                {featured.data.title}
+              </h2>
+              <p class="mt-4 text-moss leading-relaxed text-base md:text-lg">{featured.data.description}</p>
+              <span class="mt-8 inline-flex items-center gap-2 font-mono text-sm text-lima group-hover:gap-3 transition-all">
+                Leer artículo <span>→</span>
+              </span>
+            </div>
+          </div>
+        </a>
+      )}
+
+      <!-- Grid of remaining posts -->
+      <div data-stagger class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {rest.map((p) => (
+          <a
+            href={`/blog/${p.slug}/`}
+            class="spotlight glass glass-hover group flex flex-col rounded-4xl overflow-hidden"
+          >
+            {p.data.image ? (
+              <div class="h-48 overflow-hidden">
+                <img
+                  src={p.data.image}
+                  alt={p.data.title}
+                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+              </div>
+            ) : (
+              <div class="h-48 bg-gradient-to-br from-patagonia/30 to-forest flex items-center justify-center">
+                <span class="font-mono text-lima text-4xl opacity-40">~/{p.data.service}</span>
+              </div>
+            )}
+
+            <div class="flex flex-col flex-1 p-6">
+              <div class="flex items-center gap-2 font-mono text-xs mb-3">
+                <span class={serviceColors[p.data.service] ?? 'text-lima'}>~/{p.data.service}</span>
+                <span class="text-moss/60">·</span>
+                <span class="text-moss">{fmt(p.data.pubDate)}</span>
+              </div>
+              <h2 class="font-display text-lg font-bold leading-snug group-hover:text-lima transition flex-1">
+                {p.data.title}
+              </h2>
+              <p class="mt-3 text-moss text-sm line-clamp-3 leading-relaxed">{p.data.description}</p>
+              <span class="mt-5 font-mono text-xs text-lima group-hover:text-bone transition inline-flex items-center gap-1">
+                Leer <span class="transition-transform group-hover:translate-x-1">→</span>
+              </span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </main>
+</Base>
