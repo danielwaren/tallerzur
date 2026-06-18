@@ -25,12 +25,13 @@ export default function ScrollFX() {
       gsap.utils.toArray<HTMLElement>('[data-stagger]').forEach((parent) => {
         const children = parent.children;
         gsap.from(children, {
-          y: 50,
+          y: 36,
           opacity: 0,
-          duration: 0.9,
-          stagger: 0.12,
+          duration: 0.8,
+          stagger: 0.1,
           ease: 'power3.out',
-          scrollTrigger: { trigger: parent, start: 'top 85%' },
+          clearProps: 'transform',
+          scrollTrigger: { trigger: parent, start: 'top 82%' },
         });
       });
 
@@ -154,7 +155,28 @@ export default function ScrollFX() {
 
     });
 
-    return () => ctx.revert();
+    // ── Recalcular posiciones cuando cargan fuentes e imágenes ──────────────
+    // Las imágenes (capturas del portafolio, hero, etc.) cambian la altura del
+    // documento después de crear los ScrollTrigger. Sin refrescar, los reveals
+    // disparan a destiempo y las tarjetas parecen superponerse / saltar.
+    const refresh = () => ScrollTrigger.refresh();
+    document.fonts?.ready.then(refresh);
+    window.addEventListener('load', refresh);
+
+    const imgs = Array.from(document.images).filter((i) => !i.complete);
+    let pending = imgs.length;
+    const onImg = () => { if (--pending <= 0) refresh(); };
+    imgs.forEach((img) => {
+      img.addEventListener('load', onImg, { once: true });
+      img.addEventListener('error', onImg, { once: true });
+    });
+    const fallback = window.setTimeout(refresh, 1500);
+
+    return () => {
+      window.removeEventListener('load', refresh);
+      window.clearTimeout(fallback);
+      ctx.revert();
+    };
   }, []);
 
   return null;

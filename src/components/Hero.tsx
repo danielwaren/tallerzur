@@ -8,7 +8,7 @@ import 'swiper/css/effect-fade';
 
 const slides = [
   {
-    img: 'https://images.unsplash.com/photo-1601000938259-9e92002320b2?q=80&w=1920',
+    img: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=1920',
     tag: 'desarrollo web',
     text: 'Sitios que cargan rápido,\nincluso con la señal del sur.',
   },
@@ -72,7 +72,7 @@ export default function Hero() {
         autoplay={{ delay: 5000, disableOnInteraction: false }}
         loop
         speed={1400}
-        className="absolute inset-0 h-full w-full"
+        className="!absolute inset-0 h-full w-full"
         onSlideChange={(s) => {
           const active = s.slides[s.activeIndex];
           const caption = active?.querySelector('[data-caption]');
@@ -120,18 +120,6 @@ export default function Hero() {
         </h1>
         <p data-hero-reveal className="mt-6 max-w-xl text-moss text-lg">
           Desarrollo, mantenimiento y servicios web para pymes de la Región de Aysén.
-        </p>
-        <div data-hero-reveal className="mt-10 flex flex-wrap gap-4 pointer-events-auto">
-          <a href="#contacto" className="rounded-full bg-lima px-7 py-3 font-display font-medium text-abyss transition hover:scale-105 hover:shadow-[0_0_30px_rgba(124,252,138,0.4)]">
-            Conversemos
-          </a>
-          <a href="#portafolio" className="rounded-full border border-moss/40 px-7 py-3 font-display text-bone transition hover:border-lima hover:text-lima">
-            Ver trabajos
-          </a>
-        </div>
-        <p data-hero-reveal className="mt-6 font-mono text-xs text-moss/70 flex items-center gap-2">
-          <span className="inline-block w-6 h-px bg-lima/50"></span>
-          mueve el cursor — el sur reacciona
         </p>
       </div>
 

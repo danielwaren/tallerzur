@@ -1,10 +1,12 @@
 ---
 import Weather from './Weather.astro';
 
+// Orden = orden real de las secciones en la página (evita que el indicador salte)
 const links = [
   { href: '/#servicios', label: 'servicios', spy: 'servicios' },
-  { href: '/#portafolio', label: 'trabajos', spy: 'portafolio' },
   { href: '/#proceso', label: 'proceso', spy: 'proceso' },
+  { href: '/#portafolio', label: 'trabajos', spy: 'portafolio' },
+  { href: '/#contacto', label: 'contacto', spy: 'contacto' },
   { href: '/blog', label: 'blog', spy: '' },
 ];
 ---
@@ -26,11 +28,17 @@ const links = [
       <Weather variant="full" />
 
       <a
+        href="/#portafolio"
+        class="hidden lg:inline-flex rounded-full border border-moss/30 px-4 py-1.5 font-display text-bone/80 text-sm transition hover:border-lima hover:text-lima"
+      >
+        ver trabajos
+      </a>
+      <a
         href="/#contacto"
         data-magnetic
-        class="hidden md:inline-flex rounded-full bg-lima/10 border border-lima/40 px-5 py-1.5 font-display font-medium text-lima text-sm transition hover:bg-lima hover:text-abyss hover:shadow-glow-sm"
+        class="hidden md:inline-flex rounded-full bg-lima px-5 py-1.5 font-display font-medium text-abyss text-sm transition hover:scale-105 hover:shadow-glow-sm"
       >
-        <span data-magnetic-inner>contacto</span>
+        <span data-magnetic-inner>conversemos</span>
       </a>
 
       <button id="menu-btn" aria-label="Abrir menú" aria-expanded="false" class="md:hidden flex flex-col gap-1.5 p-2 group">
@@ -115,21 +123,26 @@ const links = [
   onScroll();
 
   // ── Scroll-spy for side nav ────────────────────────────────────
+  // Recorre las secciones en orden y marca activa la última cuyo inicio
+  // ya cruzó la mitad del viewport — así el indicador baja secuencialmente
+  // junto al scroll en vez de saltar entre secciones.
   const sideLinks = Array.from(document.querySelectorAll<HTMLElement>('.side-link'));
-  const sections = sideLinks
-    .map(a => a.getAttribute('data-spy'))
-    .filter((id): id is string => !!id)
-    .map(id => document.getElementById(id))
-    .filter((el): el is HTMLElement => !!el);
+  const spied = sideLinks
+    .map(a => ({ link: a, el: document.getElementById(a.getAttribute('data-spy') || '') }))
+    .filter((x): x is { link: HTMLElement; el: HTMLElement } => !!x.el);
 
-  if (sections.length) {
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          sideLinks.forEach(a => a.classList.toggle('active', a.getAttribute('data-spy') === entry.target.id));
-        }
-      });
-    }, { rootMargin: '-45% 0px -45% 0px' });
-    sections.forEach(s => io.observe(s));
+  if (spied.length) {
+    const spyScroll = () => {
+      const mid = window.innerHeight * 0.5;
+      let active = spied[0];
+      for (const s of spied) {
+        // rect.top es relativo al viewport: al cruzar la mitad de pantalla se activa
+        if (s.el.getBoundingClientRect().top <= mid) active = s;
+      }
+      sideLinks.forEach(a => a.classList.toggle('active', a === active.link));
+    };
+    window.addEventListener('scroll', spyScroll, { passive: true });
+    window.addEventListener('resize', spyScroll, { passive: true });
+    spyScroll();
   }
 </script>

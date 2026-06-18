@@ -80,7 +80,7 @@ export default function ContactForm() {
         <p className="mt-4 text-moss text-lg max-w-sm mx-auto">
           Te respondemos desde Puerto Cisnes en menos de 24 horas. Normalmente mucho antes.
         </p>
-        <a href="https://wa.me/56900000000" target="_blank" rel="noopener"
+        <a href="https://wa.me/56940068228" target="_blank" rel="noopener"
           className="mt-8 inline-block rounded-full bg-lima px-7 py-3 font-display font-medium text-abyss transition hover:scale-105">
           También puedes escribirnos por WhatsApp →
         </a>
