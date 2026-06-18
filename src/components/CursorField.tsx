@@ -62,6 +62,7 @@ export default function CursorField() {
     }
 
     let raf = 0;
+    let running = false;
     function frame() {
       ctx.clearRect(0, 0, w, h);
 
@@ -128,7 +129,7 @@ export default function CursorField() {
         }
       }
 
-      raf = requestAnimationFrame(frame);
+      if (running) raf = requestAnimationFrame(frame);
     }
 
     // ── pointer mapping (relativo al canvas) ──────────────────────────
@@ -154,23 +155,39 @@ export default function CursorField() {
       pointer.active = true;
     };
 
-    const onResize = () => { build(); if (reduced) drawStatic(); };
+    // Solo animamos en punteros finos (desktop). En táctil/sin puntero el loop
+    // O(n²) no aporta y drena CPU/batería → render estático.
+    const fine = window.matchMedia('(pointer: fine)').matches;
+    const animated = !reduced && fine;
+
+    const onResize = () => { build(); if (!animated) drawStatic(); };
 
     build();
 
-    if (reduced) {
+    let io: IntersectionObserver | null = null;
+
+    if (!animated) {
       drawStatic();
     } else {
       window.addEventListener('mousemove', onMove, { passive: true });
       window.addEventListener('touchmove', onTouch, { passive: true });
       window.addEventListener('mouseout', onLeave, { passive: true });
       window.addEventListener('deviceorientation', onTilt, { passive: true });
-      raf = requestAnimationFrame(frame);
+
+      // Pausar el rAF cuando el hero no está visible (ahorra hilo principal)
+      const start = () => { if (!running) { running = true; raf = requestAnimationFrame(frame); } };
+      const stop = () => { running = false; cancelAnimationFrame(raf); };
+      io = new IntersectionObserver(
+        ([e]) => (e.isIntersecting ? start() : stop()),
+        { threshold: 0 }
+      );
+      io.observe(canvas);
     }
     window.addEventListener('resize', onResize, { passive: true });
 
     return () => {
       cancelAnimationFrame(raf);
+      io?.disconnect();
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('touchmove', onTouch);
       window.removeEventListener('mouseout', onLeave);

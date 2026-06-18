@@ -8,17 +8,17 @@ import 'swiper/css/effect-fade';
 
 const slides = [
   {
-    img: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=1920',
+    img: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=70&w=1280&auto=format&fit=crop',
     tag: 'desarrollo web',
     text: 'Sitios que cargan rápido,\nincluso con la señal del sur.',
   },
   {
-    img: 'https://images.unsplash.com/photo-1508264165352-258db2ebd59b?q=80&w=1920',
+    img: 'https://images.unsplash.com/photo-1508264165352-258db2ebd59b?q=70&w=1280&auto=format&fit=crop',
     tag: 'mantenimiento',
     text: 'Tu sitio siempre arriba.\nNosotros lo cuidamos.',
   },
   {
-    img: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=1920',
+    img: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=70&w=1280&auto=format&fit=crop',
     tag: 'servicios web',
     text: 'Reservas, pagos, catálogos.\nHerramientas que venden.',
   },
@@ -81,10 +81,17 @@ export default function Hero() {
           }
         }}
       >
-        {slides.map((s) => (
+        {slides.map((s, i) => (
           <SwiperSlide key={s.tag}>
             <div className="relative h-full w-full">
-              <img src={s.img} alt={`Paisaje de Aysén — ${s.tag}`} className="h-full w-full object-cover" loading="eager" />
+              <img
+                src={s.img}
+                alt={`Paisaje de Aysén — ${s.tag}`}
+                className="h-full w-full object-cover"
+                loading={i === 0 ? 'eager' : 'lazy'}
+                fetchPriority={i === 0 ? 'high' : 'low'}
+                decoding="async"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-abyss via-abyss/60 to-abyss/30" />
               <div data-caption className="absolute bottom-28 left-6 md:left-16 max-w-md">
                 <span className="font-mono text-lima text-xs tracking-widest uppercase">// {s.tag}</span>
