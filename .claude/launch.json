@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "lab-lluvia",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["lab/server.mjs"],
+      "port": 4330
+    }
+  ]
+}

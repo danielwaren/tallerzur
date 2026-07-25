@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Lab · lluvia y viento — Puerto Cisnes</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#070906;color:#d8d9d0;font:400 13px/1.5 "Helvetica Neue",Arial,sans-serif;overflow:hidden}
+  body{cursor:none}
+  .stage{position:fixed;inset:0;overflow:hidden}
+  .stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.72) brightness(.66) contrast(1.05);transform:scale(1.06)}
+  .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(2,4,2,.34),rgba(3,5,3,.04) 42%,rgba(3,4,3,.74))}
+  canvas{position:fixed;inset:0;z-index:5}
+  .copy{position:fixed;z-index:4;left:50%;top:50%;transform:translate(-50%,-52%);width:min(90vw,80rem);pointer-events:none}
+  .copy h1{margin:0;font:400 clamp(4rem,10.5vw,10.5rem)/.8 "Iowan Old Style",Baskerville,"Times New Roman",serif;letter-spacing:-.06em}
+  .hud{position:fixed;z-index:9;left:1.2rem;bottom:1.2rem;display:grid;gap:.42rem;padding:.95rem 1.05rem;background:rgba(8,11,8,.66);border:1px solid rgba(226,232,224,.16);border-radius:.7rem;backdrop-filter:blur(14px);font-size:.66rem;letter-spacing:.07em;text-transform:uppercase;min-width:19rem}
+  .hud b{font-weight:600;font-size:.74rem;letter-spacing:.13em;margin-bottom:.2rem}
+  .hud .row{display:flex;justify-content:space-between;gap:1.2rem}
+  .hud .row span:last-child{opacity:.62;text-align:right}
+  .hud kbd{font:inherit;padding:.08rem .34rem;border:1px solid rgba(226,232,224,.3);border-radius:.25rem}
+  .hud hr{border:0;border-top:1px solid rgba(226,232,224,.14);margin:.25rem 0}
+  .engine{color:#9fd8b0}
+  .hud[data-engine="v7"] .engine{color:#e0a894}
+  .note{font-size:.58rem;letter-spacing:.05em;text-transform:none;opacity:.5;line-height:1.45;max-width:19rem}
+  .fps{position:fixed;z-index:9;right:1.2rem;bottom:1.2rem;font-size:.64rem;letter-spacing:.13em;opacity:.5}
+</style>
+</head>
+<body>
+  <div class="stage">
+    <img src="/public/images/cisnes-hero.webp" alt="" />
+    <div class="shade"></div>
+  </div>
+  <div class="copy"><h1>Donde el bosque<br />toca el mar.</h1></div>
+  <canvas id="c"></canvas>
+  <div class="hud" id="hud" data-engine="v8">
+    <b>lluvia <span class="engine" id="engineName">v8 · propuesta</span></b>
+    <div class="row"><span><kbd>A</kbd> motor de lluvia</span><span id="engineShort">v8</span></div>
+    <hr />
+    <div class="row"><span><kbd>W</kbd> aire / motas</span><span id="fieldState">visible</span></div>
+    <div class="row"><span><kbd>V</kbd> vectores del campo</span><span id="vectorState">oculto</span></div>
+    <div class="row"><span><kbd>↑ ↓</kbd> intensidad</span><span id="intensity">100%</span></div>
+    <div class="row"><span><kbd>C</kbd> cursor</span><span id="cursorState">v8 · preciso</span></div>
+    <hr />
+    <div class="row"><span><kbd>S</kbd> sonido</span><span id="soundState">apagado</span></div>
+    <div class="row"><span><kbd>[ ]</kbd> volumen</span><span id="volumeState">—</span></div>
+    <hr />
+    <p class="note" id="note">El aire y el cursor son la capa propuesta: se dibujan en los dos motores. <kbd>A</kbd> cambia solo la física de la lluvia, para aislar la variable.</p>
+  </div>
+  <div class="fps" id="fps"></div>
+
+<script type="module">
+/* Campo de viento con memoria: ver lab/wind-field.mjs (8 tests en Node). */
+import { createField, splatWake, stepField, sampleField, globalWind, fieldEnergy } from "/lab/wind-field.mjs";
+/* Lluvia sintetizada: ver lab/rain-audio.mjs (9 tests en Node). */
+import { createRainAudio } from "/lab/rain-audio.mjs";
+
+const rainAudio = createRainAudio();
+
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d", { alpha: true });
+const hud = document.getElementById("hud");
+const el = (id) => document.getElementById(id);
+
+let W = 0, H = 0, DPR = 1;
+let engine = "v8";
+let showAir = true;
+let showVectors = false;
+let cursorMode = "v8";
+let intensity = 1;
+const MAX_INTENSITY = 2;
+
+let field = null;
+const sampled = { x: 0, y: 0 };
+
+/* ─────────────────────────────────────────────────────────────
+   PUNTERO
+   ───────────────────────────────────────────────────────────── */
+const pointer = { x: -999, y: -999, px: -999, py: -999, vx: 0, vy: 0, speed: 0, active: false };
+const ring = { x: -999, y: -999 };
+let lastMoveAt = performance.now();   // no 0: si no, el primer gesto inyecta casi nada
+
+window.addEventListener("pointermove", (e) => {
+  const now = performance.now();
+  if (pointer.active) {
+    const dt = Math.min(0.1, Math.max(0.008, (now - lastMoveAt) / 1000));
+    pointer.vx = (e.clientX - pointer.px) / dt;
+    pointer.vy = (e.clientY - pointer.py) / dt;
+  } else {
+    ring.x = e.clientX; ring.y = e.clientY;
+    pointer.active = true;
+  }
+  lastMoveAt = now;
+  pointer.x = pointer.px = e.clientX;
+  pointer.y = pointer.py = e.clientY;
+}, { passive: true });
+
+/* ─────────────────────────────────────────────────────────────
+   PARTÍCULAS
+   ───────────────────────────────────────────────────────────── */
+const FALL = 1180;          // px/s de caída de referencia
+const EXPOSURE = 0.034;     // "obturador": largo del trazo = |v| · t
+let drops = [], motes = [], splashes = [], dropsV7 = [];
+let baseDropCount = 0, baseV7Count = 0;
+
+function seed() {
+  // Se reserva para la intensidad máxima y se usa un prefijo del array: así
+  // subir la intensidad añade gotas de verdad, no solo las acelera.
+  baseDropCount = Math.round(Math.min(340, W / 4.4));
+  drops = Array.from({ length: baseDropCount * MAX_INTENSITY }, () => newDrop(true));
+  motes = Array.from({ length: 260 }, () => ({
+    x: Math.random() * W, y: Math.random() * H,
+    d: 0.25 + Math.random() * 0.75, s: 0.45 + Math.random() * 1.25,
+  }));
+  splashes = [];
+
+  baseV7Count = Math.min(230, Math.floor(W / 6.2));
+  dropsV7 = Array.from({ length: baseV7Count * MAX_INTENSITY }, (_, index) => {
+    const depth = Math.pow(Math.random(), 0.9);
+    return {
+      x: Math.random(), y: Math.random() * 1.15 - 0.1, depth, speed: 0.28 + depth * 0.92,
+      length: 6 + depth * 32, alpha: 0.025 + depth * 0.17,
+      drift: (Math.random() - 0.5) * 1.15, phase: index * 0.71,
+      width: 0.3 + depth * 1.2, wobble: 0.5 + Math.random() * 1.5,
+    };
+  });
+}
+
+function newDrop(scatter) {
+  const d = Math.pow(Math.random(), 1.55);        // más gotas lejanas que cercanas
+  return {
+    x: Math.random() * W * 1.35 - W * 0.2,
+    y: scatter ? Math.random() * H : -Math.random() * H * 0.3 - 20,
+    d,
+    scale: 0.42 + d * 1.05,
+    jitter: 0.86 + Math.random() * 0.28,
+  };
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BUCLE
+   ───────────────────────────────────────────────────────────── */
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W * DPR; canvas.height = H * DPR;
+  canvas.style.width = W + "px"; canvas.style.height = H + "px";
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  field = createField(W, H);
+  seed();
+}
+
+let last = performance.now();
+let fpsAcc = 0, fpsN = 0;
+
+function frame(now) {
+  const dt = Math.min(0.05, Math.max(0.004, (now - last) / 1000));
+  last = now;
+  const t = now / 1000;
+
+  fpsAcc += 1 / dt; fpsN++;
+  if (fpsN >= 30) { el("fps").textContent = Math.round(fpsAcc / fpsN) + " fps"; fpsAcc = 0; fpsN = 0; }
+
+  const windX = globalWind(t);
+
+  // El campo vive SIEMPRE, en los dos motores. Es la capa propuesta:
+  // el motor de lluvia es lo único que cambia con la tecla A.
+  if (pointer.active) {
+    splatWake(field, pointer.x, pointer.y, pointer.vx, pointer.vy, dt);
+    const decay = Math.pow(0.02, dt);
+    pointer.vx *= decay; pointer.vy *= decay;
+  }
+  pointer.speed = Math.hypot(pointer.vx, pointer.vy);
+  stepField(field, dt);
+
+  // El sonido respira con la MISMA curva de viento que la imagen: cuando la
+  // racha inclina las gotas en pantalla, el filtro se abre y la lluvia se
+  // acerca. Un mp3 no puede hacer esto.
+  rainAudio.update(dt, windX, intensity);
+
+  ctx.clearRect(0, 0, W, H);
+  if (showVectors) drawVectors();
+  if (showAir) drawAir(windX, dt);
+  if (engine === "v7") drawV7(t, dt); else drawV8(windX, dt);
+  drawCursor(dt);
+
+  requestAnimationFrame(frame);
+}
+
+/* ── el campo, dibujado literal: la huella se ve ────────────── */
+function drawVectors() {
+  const { cols, rows, cell, fx, fy } = field;
+  ctx.lineCap = "round";
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const i = r * cols + c;
+      const vx = fx[i], vy = fy[i];
+      const mag = Math.hypot(vx, vy);
+      if (mag < 1.5) continue;
+      const x = c * cell, y = r * cell;
+      const k = Math.min(1, mag / 260);
+      const len = Math.min(cell * 0.85, mag * 0.06);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + (vx / mag) * len, y + (vy / mag) * len);
+      ctx.strokeStyle = `rgba(150,214,178,${0.14 + k * 0.5})`;
+      ctx.lineWidth = 0.7 + k * 1.4;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x, y, 0.8 + k * 1.4, 0, 6.2832);
+      ctx.fillStyle = `rgba(170,226,192,${0.2 + k * 0.45})`;
+      ctx.fill();
+    }
+  }
+}
+
+/* ── aire visible: motas de garúa arrastradas por el campo ──── */
+function drawAir(windX, dt) {
+  ctx.globalCompositeOperation = "lighter";
+  for (const m of motes) {
+    sampleField(field, m.x, m.y, sampled);
+    const respond = 0.55 + m.d * 1.05;
+    m.x += (windX * 0.16 * m.d + sampled.x * respond) * dt;
+    m.y += (7 * m.d + sampled.y * respond) * dt;
+    if (m.x < -20) m.x = W + 20; else if (m.x > W + 20) m.x = -20;
+    if (m.y < -20) m.y = H + 20; else if (m.y > H + 20) m.y = -20;
+    // Las motas que van rápido se estiran: el aire se lee en su movimiento.
+    const carried = Math.hypot(sampled.x, sampled.y) * respond;
+    const radius = m.s * (0.7 + m.d * 0.9);
+    if (carried > 40) {
+      ctx.beginPath();
+      ctx.moveTo(m.x, m.y);
+      ctx.lineTo(m.x - sampled.x * respond * 0.02, m.y - sampled.y * respond * 0.02);
+      ctx.strokeStyle = `rgba(206,236,220,${0.05 + m.d * 0.09})`;
+      ctx.lineWidth = radius * 1.5;
+      ctx.lineCap = "round";
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, radius, 0, 6.2832);
+      ctx.fillStyle = `rgba(214,232,220,${0.05 + m.d * 0.07})`;
+      ctx.fill();
+    }
+  }
+  ctx.globalCompositeOperation = "source-over";
+}
+
+/* ── v8 · propuesta ─────────────────────────────────────────── */
+function drawV8(windX, dt) {
+  ctx.globalCompositeOperation = "lighter";
+  ctx.lineCap = "round";
+  const bands = [
+    { limit: 0.34, w: 0.55, a: 0.055 },
+    { limit: 0.72, w: 0.95, a: 0.10 },
+    { limit: 1.01, w: 1.45, a: 0.17 },
+  ];
+  for (const band of bands) { band.path = new Path2D(); band.n = 0; }
+
+  // La intensidad sube densidad Y velocidad Y largo de trazo. Solo acelerar
+  // adelgaza la lluvia en vez de cargarla.
+  const active = Math.round(baseDropCount * intensity);
+  const speedGain = 0.72 + intensity * 0.28;
+
+  for (let i = 0; i < active; i++) {
+    const drop = drops[i];
+    sampleField(field, drop.x, drop.y, sampled);
+    const respond = 0.3 + drop.d * 0.95;
+    // Ángulo constante en todas las capas, magnitud por profundidad:
+    // así la perspectiva se sostiene y la lluvia se lee como un solo cuerpo.
+    const vx = (windX * drop.scale + sampled.x * respond) * drop.jitter;
+    const vy = FALL * drop.scale * speedGain + sampled.y * respond * 0.55;
+    drop.x += vx * dt;
+    drop.y += vy * dt;
+
+    if (drop.y > H + 40) {
+      if (Math.random() < 0.16 + drop.d * 0.3) {
+        splashes.push({ x: drop.x, y: H - Math.random() * 6, life: 1, d: drop.d });
+      }
+      Object.assign(drop, newDrop(false));
+      continue;
+    }
+    if (drop.x < -W * 0.25) drop.x += W * 1.35;
+    else if (drop.x > W * 1.15) drop.x -= W * 1.35;
+
+    // El trazo APUNTA en la dirección real de la velocidad.
+    // Ese es el detalle que separa lluvia de guiones cayendo.
+    const band = drop.d < 0.34 ? bands[0] : drop.d < 0.72 ? bands[1] : bands[2];
+    band.path.moveTo(drop.x, drop.y);
+    band.path.lineTo(drop.x - vx * EXPOSURE, drop.y - vy * EXPOSURE);
+    band.n++;
+  }
+  for (const band of bands) {
+    if (!band.n) continue;
+    ctx.strokeStyle = `rgba(206,228,214,${band.a})`;
+    ctx.lineWidth = band.w;
+    ctx.stroke(band.path);
+  }
+
+  // Impacto: sin él la lluvia flota. Micro-elipse que se abre y muere.
+  for (let i = splashes.length - 1; i >= 0; i--) {
+    const s = splashes[i];
+    s.life -= dt * 3.6;
+    if (s.life <= 0) { splashes.splice(i, 1); continue; }
+    const grow = (1 - s.life) * (5 + s.d * 11);
+    ctx.beginPath();
+    ctx.ellipse(s.x, s.y, grow, grow * 0.3, 0, 0, 6.2832);
+    ctx.strokeStyle = `rgba(206,228,214,${s.life * 0.13 * (0.4 + s.d)})`;
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+  }
+  ctx.globalCompositeOperation = "source-over";
+}
+
+/* ── v7 · el motor actual, portado literal para comparar ────── */
+function drawV7(t, dt) {
+  const time = t * 1000;
+  const active = Math.round(baseV7Count * intensity);
+  for (let i = 0; i < active; i++) {
+    const drop = dropsV7[i];
+    const rainfallPulse = 0.82 + Math.max(0, Math.sin(time * 0.00046 + drop.phase * 0.03)) * 0.34;
+    drop.y += drop.speed * dt * rainfallPulse * (0.72 + intensity * 0.28);
+    if (drop.y > 1.1) { drop.y = -0.1 - Math.random() * 0.18; drop.x = Math.random(); }
+    const gust = Math.sin(time * 0.00018) * 15 + Math.sin(time * 0.000061) * 8;
+    const sway = Math.sin(time * (0.00026 + drop.speed * 0.00005) + drop.phase) * 10 * drop.drift * drop.wobble + gust * drop.depth;
+    const x = drop.x * W + sway;
+    const y = drop.y * H;
+    const dx = x - pointer.x, dy = y - pointer.y;
+    const distance = Math.max(1, Math.hypot(dx, dy));
+    // Corte duro a 155 px y sin memoria: en cuanto el cursor se aleja, cero.
+    const influence = pointer.active && distance < 155 ? Math.pow(1 - distance / 155, 3) : 0;
+    const pressureX = (dx / distance) * influence * (3 + drop.depth * 5);
+    const pressureY = (dy / distance) * influence * (1 + drop.depth * 2.5);
+    const wakeX = pointer.vx * 0.016 * influence * 0.16;
+    const wakeY = pointer.vy * 0.016 * influence * 0.07;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    // El trazo siempre baja recto aunque la gota derive de lado: ese es el fallo.
+    ctx.quadraticCurveTo(x + (pressureX + wakeX) * 0.38, y + drop.length * 0.5, x + pressureX + wakeX, y + drop.length + pressureY + wakeY);
+    ctx.strokeStyle = `rgba(223,232,224,${drop.alpha + influence * 0.055})`;
+    ctx.lineWidth = drop.width;
+    ctx.stroke();
+  }
+}
+
+/* ── cursor ─────────────────────────────────────────────────── */
+function drawCursor(dt) {
+  if (!pointer.active) return;
+  if (cursorMode === "v7") { drawCursorV7(dt); return; }
+
+  // Halo: hace legible de dónde sale la huella. Se abre con la velocidad.
+  const push = Math.min(1, pointer.speed / 900);
+  const haloR = 54 + push * 46;
+  const halo = ctx.createRadialGradient(pointer.x, pointer.y, 0, pointer.x, pointer.y, haloR);
+  halo.addColorStop(0, `rgba(206,232,216,${0.05 + push * 0.07})`);
+  halo.addColorStop(0.55, `rgba(196,226,208,${0.018 + push * 0.03})`);
+  halo.addColorStop(1, "rgba(196,226,208,0)");
+  ctx.globalCompositeOperation = "lighter";
+  ctx.fillStyle = halo;
+  ctx.beginPath();
+  ctx.arc(pointer.x, pointer.y, haloR, 0, 6.2832);
+  ctx.fill();
+  ctx.globalCompositeOperation = "source-over";
+
+  // Anillo con retardo: aporta la sensación, no la precisión.
+  const k = 1 - Math.pow(0.0006, dt);
+  ring.x += (pointer.x - ring.x) * k;
+  ring.y += (pointer.y - ring.y) * k;
+  ctx.beginPath();
+  ctx.arc(ring.x, ring.y, 30 + push * 10, 0, 6.2832);
+  ctx.strokeStyle = `rgba(230,242,234,${0.3 + push * 0.22})`;
+  ctx.lineWidth = 1.1;
+  ctx.stroke();
+
+  // El punto NO interpola: aquí está el mouse de verdad, y por eso se
+  // puede volver a hacer clic con precisión.
+  ctx.beginPath();
+  ctx.arc(pointer.x, pointer.y, 2.6, 0, 6.2832);
+  ctx.fillStyle = "rgba(240,248,242,.95)";
+  ctx.fill();
+}
+
+/* El cursor actual, para comparar el retardo: anillo grande interpolado a
+   .085 por frame y sin punto exacto. Durante un gesto rápido el único
+   indicador visible queda 80 px o más por detrás del mouse real. */
+function drawCursorV7(dt) {
+  const k = 1 - Math.pow(1 - 0.085, dt * 60);
+  ring.x += (pointer.x - ring.x) * k;
+  ring.y += (pointer.y - ring.y) * k;
+  ctx.beginPath();
+  ctx.arc(ring.x, ring.y, 41, 0, 6.2832);
+  ctx.strokeStyle = "rgba(228,239,230,.3)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(ring.x, ring.y, 1.5, 0, 6.2832);
+  ctx.fillStyle = "rgba(236,244,238,.85)";
+  ctx.fill();
+  ctx.font = "8px system-ui, sans-serif";
+  ctx.fillStyle = "rgba(237,243,237,.76)";
+  ctx.textAlign = "center";
+  ctx.fillText("LLUVIA", ring.x, ring.y + 20);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   CONTROLES
+   ───────────────────────────────────────────────────────────── */
+function syncHud() {
+  hud.dataset.engine = engine;
+  el("engineName").textContent = engine === "v8" ? "v8 · propuesta" : "v7 · actual";
+  el("engineShort").textContent = engine;
+  el("fieldState").textContent = showAir ? "visible" : "oculto";
+  el("vectorState").textContent = showVectors ? "visible" : "oculto";
+  el("intensity").textContent = Math.round(intensity * 100) + "%";
+  el("cursorState").textContent = cursorMode === "v8" ? "v8 · preciso" : "v7 · con retardo";
+  el("soundState").textContent = rainAudio.running ? "sonando" : "apagado";
+  el("volumeState").textContent = rainAudio.running
+    ? Math.round(rainAudio.volume / 0.3 * 100) + "%"
+    : "—";
+}
+
+window.addEventListener("keydown", (e) => {
+  switch (e.key.toLowerCase()) {
+    case "a": engine = engine === "v8" ? "v7" : "v8"; break;
+    case "w": showAir = !showAir; break;
+    case "v": showVectors = !showVectors; break;
+    case "c": cursorMode = cursorMode === "v8" ? "v7" : "v8"; break;
+    case "arrowup": intensity = Math.min(MAX_INTENSITY, Math.round((intensity + 0.1) * 10) / 10); break;
+    case "arrowdown": intensity = Math.max(0.3, Math.round((intensity - 0.1) * 10) / 10); break;
+    // La tecla ES el gesto de usuario que exige la política de autoplay:
+    // el contexto arranca aquí, nunca solo.
+    case "s":
+      if (rainAudio.running) rainAudio.stop();
+      else rainAudio.start().then(syncHud);
+      break;
+    case "[": rainAudio.setVolume(rainAudio.volume - 0.01); break;
+    case "]": rainAudio.setVolume(rainAudio.volume + 0.01); break;
+    default: return;
+  }
+  e.preventDefault();
+  syncHud();
+});
+
+window.addEventListener("resize", resize);
+resize();
+syncHud();
+requestAnimationFrame(frame);
+
+// Sonda para verificación automatizada (el panel oculto congela rAF).
+window.__lab = { probe: () => ({ engine, showAir, showVectors, cursorMode, intensity, energy: fieldEnergy(field), drops: drops.length, motes: motes.length }) };
+</script>
+</body>
+</html>
