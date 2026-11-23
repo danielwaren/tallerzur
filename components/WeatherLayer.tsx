@@ -10,10 +10,8 @@ import {
   liveWeatherFactor, NEUTRAL_LIVE_FACTOR, type WeatherState, type LiveFactor,
 } from "@/lib/weather-states";
 import { afterLoadIdle } from "@/lib/idle";
+import { getLiveWeather } from "@/lib/live-weather";
 
-// Mismas coordenadas que usa el widget de clima de tallerzur.cl.
-const LIVE_WEATHER_URL =
-  "https://api.open-meteo.com/v1/forecast?latitude=-44.7427&longitude=-72.6926&current=weather_code&timezone=auto";
 const LIVE_WEATHER_REFRESH_MS = 15 * 60 * 1000;
 
 const FALL = 1180;        // px/s de caída de referencia
@@ -457,19 +455,14 @@ export default function WeatherLayer() {
     };
 
     let liveTimer = 0;
+    // Petición compartida con la tarjeta "En vivo" de Nosotros (lib/live-weather).
     const fetchLiveWeather = async () => {
-      try {
-        const res = await fetch(LIVE_WEATHER_URL, { cache: "no-store" });
-        const data = await res.json();
-        const code = data?.current?.weather_code;
-        if (typeof code === "number") {
-          live = liveWeatherFactor(code);
-          updateTarget();
-        }
-      } catch {
-        // Sin red, o Open-Meteo caído: se queda en el factor neutro y la
-        // narrativa por scroll sigue funcionando igual que siempre.
-      }
+      const current = await getLiveWeather(LIVE_WEATHER_REFRESH_MS - 60_000);
+      // Sin red, o Open-Meteo caído: se queda en el factor neutro y la
+      // narrativa por scroll sigue funcionando igual que siempre.
+      if (!current) return;
+      live = liveWeatherFactor(current.code);
+      updateTarget();
     };
 
     // La lluvia es decorado: arranca cuando la página ya cargó y el hilo

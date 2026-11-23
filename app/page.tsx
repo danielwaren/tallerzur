@@ -5,8 +5,9 @@ import SiteHeader from "@/components/SiteHeader";
 import ContactPanel from "@/components/ContactPanel";
 import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 import PageEffects from "@/components/PageEffects";
+import LiveWeather from "@/components/LiveWeather";
 import { media } from "@/lib/media";
-import { SERVICES, MAINTENANCE, TRUST } from "@/lib/services";
+import { SERVICES, MAINTENANCE, TRUST, ABOUT } from "@/lib/services";
 import { PROJECTS } from "@/lib/projects";
 import { FAQ } from "@/lib/faq";
 import { COORDS, professionalServiceJsonLd, faqJsonLd } from "@/lib/seo";
@@ -19,6 +20,9 @@ import { CONTACT_EMAIL, whatsappTextFor, whatsappUrl } from "@/lib/contact";
  * el header/menú, el panel de contacto, el WhatsApp flotante, la lluvia y
  * los efectos de scroll.
  */
+/** Orden del calendario: de julio a junio, la temporada alta queda al centro. */
+const SEASON_ORDER = [6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5];
+
 export default function Home() {
   return (
     <>
@@ -118,14 +122,55 @@ export default function Home() {
             <h2 id="mantencion-title">{MAINTENANCE.heading}</h2>
             <p className="care-lead">{MAINTENANCE.lead}</p>
           </div>
-          <dl className="care-grid">
-            {MAINTENANCE.guarantees.map((item, index) => (
-              <div key={item.label} data-reveal style={{ transitionDelay: `${index * 80}ms` }}>
-                <dt><span>{item.value}</span>{item.label}</dt>
-                <dd>{item.note}</dd>
+          <div className="care-body">
+            <div className="care-incident" data-reveal>
+              <p className="care-kicker">{MAINTENANCE.incidentTitle}</p>
+              <ol className="incident">
+                {MAINTENANCE.incident.map((step, index) => (
+                  <li key={step.when} style={{ "--step": index } as CSSProperties}>
+                    <span className="incident-when">{step.when}</span>
+                    <strong>{step.title}</strong>
+                    <p>{step.text}</p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <div className="care-side">
+              {/* Ilustrativo: el "pulso" de un sitio monitoreado. */}
+              <div className="monitor" data-reveal aria-hidden="true">
+                <p className="monitor-status"><i />{MAINTENANCE.monitor}</p>
+                <svg className="monitor-pulse" viewBox="0 0 320 64" preserveAspectRatio="none" focusable="false">
+                  <path className="monitor-base" d="M0 32H320" />
+                  <path className="monitor-beat" d="M0 32H96L106 32L114 14L124 54L134 6L144 46L152 32H210L216 32L222 22L230 40L236 32H320" />
+                </svg>
+                <p className="monitor-caption">Si el pulso se corta, la alerta nos llega a nosotros.</p>
               </div>
-            ))}
-          </dl>
+              <div className="year" data-reveal>
+                <p className="care-kicker">{MAINTENANCE.yearTitle}</p>
+                {/* Empieza en julio para que la temporada alta (dic–mar) quede seguida. */}
+                <ol className="year-months" aria-label="Meses del año. Temporada alta de diciembre a marzo.">
+                  {SEASON_ORDER.map((month, position) => {
+                    const high = (MAINTENANCE.highSeason as readonly number[]).includes(month);
+                    return (
+                      <li key={month} className={high ? "is-high" : undefined} style={{ "--m": position } as CSSProperties}>
+                        {MAINTENANCE.months[month]}
+                      </li>
+                    );
+                  })}
+                </ol>
+                <dl className="year-legend">
+                  <div className="is-high">
+                    <dt>{MAINTENANCE.seasons.high.label}</dt>
+                    <dd><strong>{MAINTENANCE.seasons.high.value}</strong> {MAINTENANCE.seasons.high.note}</dd>
+                  </div>
+                  <div>
+                    <dt>{MAINTENANCE.seasons.low.label}</dt>
+                    <dd><strong>{MAINTENANCE.seasons.low.value}</strong> {MAINTENANCE.seasons.low.note}</dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          </div>
           <div className="care-actions" data-reveal>
             <a className="btn btn-light" href="/?servicio=mantencion#contacto" data-servicio="mantencion">
               {MAINTENANCE.cta}<i aria-hidden="true">↗</i>
@@ -133,6 +178,7 @@ export default function Home() {
             <a className="btn btn-ghost" href={whatsappUrl(whatsappTextFor("mantencion"))} target="_blank" rel="noopener">
               Preguntar por WhatsApp
             </a>
+            <p className="care-note">{MAINTENANCE.note}</p>
           </div>
         </section>
 
@@ -171,16 +217,26 @@ export default function Home() {
               <Picture image={media.bosqueHelechos} sizes="100vw" alt="" />
               <div className="company-bg-shade" />
             </div>
-            <p className="company-label"><span>nosotros</span><small>Puerto Cisnes</small></p>
-            <div className="company-content">
-              <div className="company-emblem" aria-hidden="true"><span>T</span><i /><span>Z</span></div>
-              <div className="company-text">
+            <p className="company-label"><span>nosotros</span><small>Puerto Cisnes · Aysén</small></p>
+            <div className="company-grid">
+              <div className="company-text" data-reveal>
                 <span className="company-kicker">( no vienes al sur solo para verlo: vienes a recordarlo )</span>
-                <h2 className="company-title" id="company-title">Quiénes somos</h2>
-                <p>Somos TallerZur: desarrollo web hecho en Puerto Cisnes para negocios de la Región de Aysén. Sabemos que la señal falla y que tu cliente busca &ldquo;hostal en Coyhaique&rdquo; desde el celular con dos barras. Por eso construimos distinto.</p>
-                <p>La lluvia que ves en esta página es la de ahora mismo, afuera de donde escribimos el código. Si aquí llueve, en el sitio llueve.</p>
+                <h2 className="company-title" id="company-title">
+                  Escribimos código a 44° sur, <em>con la lluvia en la ventana.</em>
+                </h2>
+                <p>{ABOUT.intro}</p>
               </div>
+              <LiveWeather />
             </div>
+            <ul className="principles">
+              {ABOUT.principles.map((item, index) => (
+                <li key={item.title} data-reveal style={{ transitionDelay: `${index * 90}ms` }}>
+                  <small>{String(index + 1).padStart(2, "0")}</small>
+                  <strong>{item.title}</strong>
+                  <span>{item.text}</span>
+                </li>
+              ))}
+            </ul>
             <p className="company-coordinate"><span>{COORDS.label.lat}</span><i /><span>{COORDS.label.lon}</span></p>
           </div>
         </section>

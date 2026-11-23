@@ -207,3 +207,32 @@ test("formulario de contacto completo, con honeypot y comunas de Aysén", async 
   }
   assert.equal((form.match(/<option value="(Guaitecas|Cisnes|Lago Verde|Aysén|Coyhaique|Río Ibáñez|Chile Chico|Cochrane|O&#x27;Higgins|O'Higgins|Tortel)"/g) ?? []).length, 10);
 });
+
+/* ── Mantención, Nosotros y contacto (rediseño) ─────────────────────── */
+
+test("mantención: una caída paso a paso y el año con la temporada alta", async () => {
+  const html = await renderHome();
+  const care = html.match(/<section[^>]*id="mantencion"[\s\S]*?<\/section>/i)?.[0] ?? "";
+  assert.equal((care.match(/class="incident-when"/g) ?? []).length, 4, "4 pasos de la caída");
+  const months = care.match(/<ol class="year-months"[\s\S]*?<\/ol>/)?.[0] ?? "";
+  assert.equal((months.match(/<li/g) ?? []).length, 12);
+  assert.equal((months.match(/class="is-high"/g) ?? []).length, 4, "temporada alta: dic, ene, feb, mar");
+  assert.match(months, /^<ol[^>]*>\s*<li[^>]*>Jul</, "el calendario empieza en julio");
+  assert.doesNotMatch(care, /care-grid/, "las tarjetas genéricas ya no están");
+});
+
+test("nosotros: tarjeta de clima en vivo y principios de trabajo", async () => {
+  const html = await renderHome();
+  const about = html.match(/<section[^>]*id="nosotros"[\s\S]*?<\/section>/i)?.[0] ?? "";
+  assert.match(about, /En vivo · Puerto Cisnes/);
+  assert.match(about, /aria-live="polite"/);
+  assert.equal((about.match(/<li[^>]*data-reveal/g) ?? []).length, 3, "tres principios");
+});
+
+test("contacto: botón de WhatsApp tipo chat con el mensaje ya escrito", async () => {
+  const html = await renderHome();
+  const chat = html.match(/<a[^>]*class="wa-chat"[\s\S]*?<\/a>/i)?.[0] ?? "";
+  assert.match(chat, /href="https:\/\/wa\.me\/56940068228\?text=Hola/);
+  assert.match(chat, /class="wa-bubble"[^>]*>Hola TallerZur/);
+  assert.match(html, /<form[^>]*id="contacto-form"/, "el formulario es destino del scroll");
+});

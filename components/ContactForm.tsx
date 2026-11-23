@@ -6,6 +6,7 @@ import {
   normalizeContact, validateContact, whatsappUrl, whatsappFallbackText,
   type ContactErrors, type ContactField, type ContactInput, type ServicioId,
 } from "@/lib/contact";
+import WhatsAppIcon from "@/components/WhatsAppIcon";
 
 type Status = "idle" | "sending" | "sent" | "error" | "no-config";
 
@@ -106,22 +107,22 @@ export default function ContactForm({ servicio, onServicioChange }: Props) {
   const failed = status === "error" || status === "no-config";
 
   return (
-    <form ref={formRef} className="contact-form" action="/api/contacto" method="post" noValidate onSubmit={onSubmit}>
+    <form ref={formRef} id="contacto-form" className="contact-form" action="/api/contacto" method="post" noValidate onSubmit={onSubmit}>
       <div className="form-grid">
         <div className="field">
-          <label htmlFor="contacto-nombre">Tu nombre</label>
+          <label htmlFor="contacto-nombre">Nombre</label>
           <input {...fieldProps("nombre")} type="text" autoComplete="name" maxLength={LIMITS.nombre.max} required />
           {error("nombre")}
         </div>
         <div className="field">
-          <label htmlFor="contacto-negocio">Tu negocio</label>
-          <input {...fieldProps("negocio")} type="text" autoComplete="organization" maxLength={LIMITS.negocio.max} placeholder="Hostal, cabañas, restaurante…" required />
+          <label htmlFor="contacto-negocio">Negocio</label>
+          <input {...fieldProps("negocio")} type="text" autoComplete="organization" maxLength={LIMITS.negocio.max} placeholder="Hostal, cabañas…" required />
           {error("negocio")}
         </div>
         <div className="field">
           <label htmlFor="contacto-comuna">Comuna</label>
           <select {...fieldProps("comuna")} defaultValue="" required>
-            <option value="" disabled>Elige tu comuna</option>
+            <option value="" disabled>Elige</option>
             <optgroup label="Región de Aysén">
               {AYSEN_COMUNAS.map((comuna) => <option key={comuna} value={comuna}>{comuna}</option>)}
             </optgroup>
@@ -132,38 +133,37 @@ export default function ContactForm({ servicio, onServicioChange }: Props) {
         <div className="field">
           <label htmlFor="contacto-rubro">Rubro</label>
           <select {...fieldProps("rubro")} defaultValue="" required>
-            <option value="" disabled>Elige tu rubro</option>
+            <option value="" disabled>Elige</option>
             {RUBROS.map((rubro) => <option key={rubro} value={rubro}>{rubro}</option>)}
           </select>
           {error("rubro")}
         </div>
         <div className="field">
-          <label htmlFor="contacto-servicio">Qué te interesa</label>
+          <label htmlFor="contacto-servicio">Te interesa</label>
           <select
             {...fieldProps("servicio")}
             value={servicio ?? ""}
             onChange={(event) => onServicioChange((event.target.value || null) as ServicioId | null)}
             required
           >
-            <option value="" disabled>Elige una opción</option>
+            <option value="" disabled>Elige</option>
             {SERVICIOS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
           </select>
           {error("servicio")}
         </div>
         <div className="field">
-          <label htmlFor="contacto-sitio">Sitio web actual <span>(opcional)</span></label>
+          <label htmlFor="contacto-sitio">Sitio actual <span>(opcional)</span></label>
           <input {...fieldProps("sitio")} type="text" inputMode="url" autoComplete="url" autoCapitalize="none" spellCheck={false} maxLength={LIMITS.sitio.max} placeholder="tunegocio.cl" />
           {error("sitio")}
         </div>
         <div className="field field-wide">
-          <label htmlFor="contacto-mensaje">Cuéntanos qué necesitas</label>
-          <textarea {...fieldProps("mensaje")} rows={5} maxLength={LIMITS.mensaje.max} placeholder="Por ejemplo: tengo un hostal en Puyuhuapi y quiero que me encuentren en Google y recibir reservas." required />
+          <label htmlFor="contacto-mensaje">¿Qué necesitas?</label>
+          <textarea {...fieldProps("mensaje")} rows={3} maxLength={LIMITS.mensaje.max} placeholder="Ej.: tengo un hostal en Puyuhuapi y quiero recibir reservas online." required />
           {error("mensaje")}
         </div>
         <div className="field field-wide">
-          <label htmlFor="contacto-contacto">Correo o WhatsApp para responderte</label>
-          <input {...fieldProps("contacto", true)} type="text" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} maxLength={LIMITS.contacto.max} placeholder="nombre@tunegocio.cl o +56 9 1234 5678" required />
-          <p className="field-hint" id="contacto-hint">Solo lo usamos para responderte.</p>
+          <label htmlFor="contacto-contacto">Correo o WhatsApp</label>
+          <input {...fieldProps("contacto")} type="text" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} maxLength={LIMITS.contacto.max} placeholder="tu@correo.cl o 9 1234 5678" required />
           {error("contacto")}
         </div>
       </div>
@@ -179,7 +179,7 @@ export default function ContactForm({ servicio, onServicioChange }: Props) {
         <button className="btn btn-dark" type="submit" disabled={status === "sending"} aria-busy={status === "sending"}>
           {status === "sending" ? "Enviando…" : "Enviar mensaje"}
         </button>
-        <p className="form-note">Te respondemos en menos de 24 h. La asesoría inicial es gratis.</p>
+        <p className="form-note">Respondemos en menos de 24 h. Tus datos solo se usan para responderte.</p>
       </div>
 
       <div className="form-status" role="status" aria-live="polite">
@@ -191,8 +191,8 @@ export default function ContactForm({ servicio, onServicioChange }: Props) {
                 ? "El formulario todavía no está conectado al correo. Escríbenos por WhatsApp, es lo más rápido: tu mensaje ya va escrito."
                 : "No pudimos enviar el mensaje. Escríbenos por WhatsApp, es lo más rápido: tu mensaje ya va escrito."}
             </p>
-            <a className="btn btn-dark" href={whatsappUrl(whatsappFallbackText(lastInput))} target="_blank" rel="noopener">
-              Enviar por WhatsApp<i aria-hidden="true">↗</i>
+            <a className="btn btn-wa" href={whatsappUrl(whatsappFallbackText(lastInput))} target="_blank" rel="noopener">
+              <WhatsAppIcon size={20} />Enviar por WhatsApp<i aria-hidden="true">↗</i>
             </a>
           </div>
         )}

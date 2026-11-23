@@ -142,7 +142,7 @@ export default function PageEffects() {
             })
               .fromTo(".company-bg", { opacity: .2, scale: 1.04 }, { opacity: 1, scale: 1, ease: "none" }, 0)
               .fromTo(".company-bg img", { scale: 1.12, yPercent: -5 }, { scale: 1.02, yPercent: 3, ease: "none" }, 0)
-              .fromTo(".company-emblem", { opacity: 0, scale: .85, rotate: -6 }, { opacity: 1, scale: 1, rotate: 0, ease: "power2.out" }, .1);
+              .fromTo(".company-title", { yPercent: 18 }, { yPercent: 0, ease: "power2.out" }, 0);
           }, document.querySelector(".site") ?? undefined);
           revert = () => ctx.revert();
         })

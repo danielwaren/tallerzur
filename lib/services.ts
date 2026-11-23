@@ -75,17 +75,35 @@ export const SERVICES: Service[] = [
   },
 ];
 
-/** Promesas de la Mantención garantizada — el servicio de los correos de prospección. */
+/**
+ * Mantención garantizada: el servicio de los correos de prospección.
+ *
+ * En vez de cuatro tarjetas de "beneficios", dos cosas que un dueño de
+ * hostal reconoce: cómo se ve una caída cuando hay alguien cuidando el sitio
+ * (paso a paso, sin cifras inventadas) y su propio año, con la temporada
+ * alta marcada, que es cuando más duele un sitio caído.
+ */
 export const MAINTENANCE = {
   heading: "Si tu sitio se cae en enero, no esperas a marzo.",
   lead:
     "La temporada alta en Aysén dura pocos meses y no perdona un sitio caído. La mantención existe para que eso lo resolvamos nosotros, rápido, mientras tú atiendes a tus pasajeros.",
-  guarantees: [
-    { value: "< 24 h", label: "Respuesta todo el año", note: "Cualquier problema o cambio, respondido en menos de un día." },
-    { value: "< 4 h", label: "Temporada alta (dic–mar)", note: "Si el sitio se cae, lo atendemos en menos de 4 horas hábiles." },
-    { value: "WhatsApp", label: "Soporte directo", note: "Hablas con quien conoce tu sitio. Sin tickets ni formularios." },
-    { value: "Mensual", label: "Plan a tu medida", note: "Te cotizamos según el tamaño de tu sitio. Sin letra chica." },
+  incidentTitle: "Una caída, con mantención",
+  incident: [
+    { when: "Minuto 0", title: "Tu sitio deja de responder.", text: "Un servidor, un plugin, un certificado vencido. Da lo mismo la causa: alguien estaba intentando reservar." },
+    { when: "Minutos después", title: "El monitor nos avisa a nosotros.", text: "No te enteras por un pasajero molesto ni por una reseña en Google." },
+    { when: "< 4 h hábiles", title: "Lo reparamos o volvemos al último respaldo.", text: "Ese es el plazo en temporada alta. El resto del año respondemos en menos de 24 horas." },
+    { when: "Al cerrar", title: "Te contamos qué pasó, por WhatsApp.", text: "En simple, sin tecnicismos y sin tickets." },
   ],
+  yearTitle: "Tu año en Aysén",
+  months: ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"],
+  /** Índices de los meses de temporada alta: diciembre a marzo. */
+  highSeason: [0, 1, 2, 11],
+  seasons: {
+    high: { label: "Temporada alta", value: "< 4 h hábiles", note: "si el sitio se cae" },
+    low: { label: "Resto del año", value: "< 24 h", note: "para cualquier problema o cambio" },
+  },
+  monitor: "tusitio.cl · en línea",
+  note: "Plan mensual, cotizado según el tamaño de tu sitio. Sin letra chica.",
   cta: "Quiero mantención para mi sitio",
 } as const;
 
@@ -95,3 +113,17 @@ export const TRUST = [
   { title: "Respuesta en menos de 24 h", text: "Y en menos de 4 h hábiles si se cae en temporada alta." },
   { title: "Carga con mala señal", text: "Sitios livianos, pensados para el celular con dos barras." },
 ] as const;
+
+/**
+ * Nosotros: quiénes somos y cómo trabajamos. Principios, no promesas con
+ * cifras: lo que cualquiera puede comprobar hablando con nosotros.
+ */
+export const ABOUT = {
+  intro:
+    "Somos TallerZur: desarrollo web hecho en Puerto Cisnes para negocios de la Región de Aysén. Sabemos que la señal falla y que tu cliente busca “hostal en Coyhaique” desde el celular con dos barras. Por eso construimos distinto.",
+  principles: [
+    { title: "Liviano antes que vistoso", text: "Si no carga con dos barras de señal, no sirve, por bonito que sea." },
+    { title: "Hablas con quien lo hizo", text: "Sin call center ni tickets: un WhatsApp y te responde la misma persona que conoce tu sitio." },
+    { title: "Al ritmo de la temporada", text: "Sabemos que enero no es junio. Los cambios urgentes se hacen cuando importan." },
+  ],
+} as const;

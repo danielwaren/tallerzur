@@ -13,7 +13,7 @@ Fraunces/Inter, el tono oscuro y los paneles apilados. Rama
 |---|---|
 | Compilación | ✅ `npm run build:local` limpio |
 | Tipos | ✅ `tsc --noEmit`: los mismos 3 errores previos del andamiaje D1 (`db/index.ts`, `worker/index.ts`), ninguno nuevo |
-| Tests | ✅ **72/72** (`npm run test:unit`): 39 previos + 33 nuevos |
+| Tests | ✅ **79/79** (`npm run test:unit`) |
 | Lighthouse móvil (build real, con compresión) | Accesibilidad **100** · Buenas prácticas **100** · SEO **100** · Performance **93–95** con CPU calibrada / **74–80** con el ×4 por defecto (ver §4) |
 | Revisado en el navegador | ✅ 390 px y escritorio (1440 px), en dev y en el build de producción |
 
@@ -58,6 +58,26 @@ Se recuperó y modernizó el efecto en que las tarjetas se superponen al hacer s
 - **Pantallas:** funciona también en el celular. Ahí la foto es flexible y ocupa lo que deja el texto, para que la tarjeta entera quepa.
 - **Red de seguridad:** si en alguna pantalla una tarjeta no cabe (por ejemplo, iPhone SE 375×667), el apilado se apaga solo y las tarjetas fluyen una tras otra. Nunca tapan un CTA.
 - **Comprobado** con hit-test de los tres CTA en 330×640, 375×667, 390×844, 1366×700 y 1440×900. Con `prefers-reduced-motion` no hay apilado.
+
+## 1c. Rediseño: mantención, Nosotros y contacto
+
+- **Mantención** (ya no son 4 tarjetas genéricas):
+  - *Una caída, con mantención*: 4 pasos en una línea de tiempo que va de rojo (el sitio cae) a verde (resuelto y explicado por WhatsApp). La línea se dibuja al hacer scroll.
+  - *Pulso del monitor*: línea animada con "tusitio.cl · en línea". Es ilustrativa: no muestra datos reales.
+  - *Tu año en Aysén*: calendario de julio a junio con diciembre–marzo destacados (menos de 4 h hábiles) frente al resto del año (menos de 24 h).
+- **Nosotros**:
+  - Frase grande: "Escribimos código a 44° sur, con la lluvia en la ventana."
+  - Tarjeta **En vivo · Puerto Cisnes** con temperatura, estado del cielo, viento y hora local reales de Open-Meteo. Si está lloviendo, la tarjeta lo dice y muestra lluvia.
+  - Tres principios de trabajo, sin cifras.
+  - La consulta de clima se comparte con la capa de lluvia (`lib/live-weather.ts`), así que es una sola petición.
+- **Formulario compacto**:
+  - Etiquetas cortas, campos en pares también en el celular, mensaje de 3 líneas.
+  - Mide 549 px y cabe entero en una pantalla de 390×844 (también en un iPhone SE).
+  - Los CTA de servicio llevan la pantalla directo al formulario, no al título de la sección.
+- **WhatsApp tipo chat**:
+  - Ícono con aros que laten, "responde en menos de 24 h", puntos de "escribiendo…" y luego la burbuja con el mensaje que ya va escrito (cambia según el servicio).
+  - Al pasar el cursor, un brillo cruza la tarjeta.
+  - El botón de WhatsApp que aparece si falla el envío usa el mismo estilo.
 
 ## 2. Contacto
 

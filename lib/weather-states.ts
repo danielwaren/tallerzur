@@ -138,3 +138,33 @@ export function applyLiveFactor(state: WeatherState, factor: LiveFactor): Weathe
     wind: Math.min(1, state.wind * factor.wind),
   };
 }
+
+/**
+ * Código WMO de Open-Meteo → descripción corta en español de Chile, para la
+ * tarjeta "En vivo". Los códigos que no conocemos caen en "Tiempo variable"
+ * en vez de mostrar un número.
+ */
+export function describeWeather(code: number): string {
+  if (code === 0) return "Despejado";
+  if (code === 1) return "Mayormente despejado";
+  if (code === 2) return "Parcialmente nublado";
+  if (code === 3) return "Nublado";
+  if (code === 45 || code === 48) return "Niebla";
+  if (code >= 51 && code <= 55) return code === 51 ? "Llovizna ligera" : "Llovizna";
+  if (code === 56 || code === 57) return "Llovizna helada";
+  if (code === 61) return "Lluvia ligera";
+  if (code === 63) return "Lluvia";
+  if (code === 65) return "Lluvia intensa";
+  if (code === 66 || code === 67) return "Lluvia helada";
+  if (code >= 71 && code <= 77) return code === 71 ? "Nieve ligera" : "Nieve";
+  if (code >= 80 && code <= 82) return code === 82 ? "Chubascos fuertes" : "Chubascos";
+  if (code === 85 || code === 86) return "Chubascos de nieve";
+  if (code === 95) return "Tormenta";
+  if (code === 96 || code === 99) return "Tormenta con granizo";
+  return "Tiempo variable";
+}
+
+/** ¿Está cayendo agua (o nieve)? Para el texto de la tarjeta en vivo. */
+export function isWet(code: number): boolean {
+  return (code >= 51 && code <= 67) || (code >= 71 && code <= 86) || code >= 95;
+}
