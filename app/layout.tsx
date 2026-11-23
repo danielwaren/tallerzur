@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { SITE_URL } from "@/lib/site";
+import { SITE_TITLE, SITE_DESCRIPTION } from "@/lib/seo";
+import { OG_IMAGE } from "@/lib/media";
 import "./fonts.css";
 import "./globals.css";
 
@@ -18,33 +20,20 @@ import "./globals.css";
  */
 
 /**
- * SEO local, no genérico.
- *
- * El título y la descripción van en el idioma real de la búsqueda — "página
- * web para hostal en Coyhaique", no "soluciones digitales de vanguardia"
- * (ver src/content/blog/seo-local-como-aparecer-en-google.md del sitio
- * hermano en /tallerzur, que ya explica por qué). `keywords` casi no pesa
- * para Google desde hace años, pero sí lo leen buscadores menores y
- * directorios locales, así que se mantiene honesto y específico en vez de
- * vacío.
+ * SEO local, no genérico: el título y la descripción van en el idioma real
+ * de la búsqueda ("página web para hostal en Coyhaique"), no en jerga de
+ * agencia. Viven en lib/seo.ts junto al JSON-LD para que digan lo mismo.
  */
-const TITLE = "TallerZur — Desarrollo web para hostales y pymes de Aysén";
-const DESCRIPTION =
-  "Desarrollo web, mantenimiento y servicios digitales para hostales, " +
-  "restaurantes, peluquerías y hoteles de la Región de Aysén. Hecho en " +
-  "Puerto Cisnes, Patagonia chilena.";
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: TITLE, template: "%s · TallerZur" },
-  description: DESCRIPTION,
+  title: { default: SITE_TITLE, template: "%s · TallerZur" },
+  description: SITE_DESCRIPTION,
   applicationName: "TallerZur",
   authors: [{ name: "TallerZur" }],
   keywords: [
-    "TallerZur", "desarrollo web Aysén", "diseño web Coyhaique", "página web Puerto Cisnes",
-    "página web para hostal", "página web para restaurante", "página web para peluquería",
-    "página web para hotel", "agencia web Patagonia", "mantenimiento web pymes",
-    "SEO local Aysén", "Región de Aysén", "Chile",
+    "TallerZur", "página web Aysén", "diseño web Coyhaique", "página web Puerto Cisnes",
+    "página web para hostal", "página web para cabañas", "página web para restaurante",
+    "mantención de sitios web", "reservas online hostal", "SEO local Aysén", "Región de Aysén",
   ],
   alternates: { canonical: "/" },
   openGraph: {
@@ -52,16 +41,15 @@ export const metadata: Metadata = {
     locale: "es_CL",
     url: SITE_URL,
     siteName: "TallerZur",
-    title: TITLE,
-    description: DESCRIPTION,
-    // TODO: exportar un JPEG 1200×630 dedicado. X/Twitter no acepta WebP.
-    images: [{ url: "/images/cisnes-hero.webp", width: 1536, height: 960, alt: "Bosque siempreverde junto al agua en Puerto Cisnes, sede de TallerZur" }],
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [{ url: OG_IMAGE.url, width: OG_IMAGE.width, height: OG_IMAGE.height, alt: OG_IMAGE.alt, type: "image/jpeg" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: TITLE,
-    description: DESCRIPTION,
-    images: ["/images/cisnes-hero.webp"],
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [{ url: OG_IMAGE.url, alt: OG_IMAGE.alt }],
   },
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
   robots: { index: true, follow: true },

@@ -9,7 +9,7 @@ test("hay seis capítulos en orden vertical", () => {
   assert.equal(CHAPTERS.length, 6);
   assert.deepEqual(
     CHAPTERS.map((c) => c.id),
-    ["inicio", "esencia", "territorio", "nosotros", "bosque", "llegar"],
+    ["inicio", "servicios", "proyectos", "nosotros", "preguntas", "contacto"],
   );
 });
 
@@ -17,14 +17,14 @@ test("la narrativa del agua es coherente de arriba abajo", () => {
   const by = Object.fromEntries(CHAPTERS.map((c) => [c.id, c.state]));
   // Cae con fuerza en el hero y no queda nada al final.
   assert.equal(by.inicio.rain, 1);
-  assert.equal(by.llegar.rain, 0);
-  assert.ok(by.inicio.rain > by.esencia.rain, "la lluvia amaina tras el hero");
+  assert.equal(by.contacto.rain, 0);
+  assert.ok(by.inicio.rain > by.servicios.rain, "la lluvia amaina tras el hero");
   // La niebla sube en el bosque, no en la llegada despejada.
-  assert.ok(by.esencia.mist > by.llegar.mist);
+  assert.ok(by.proyectos.mist > by.contacto.mist);
   // Cada efecto especial vive en su capítulo y casi solo ahí.
-  assert.ok(by.territorio.ripples > 0.6, "el canal en calma");
+  assert.ok(by.servicios.ripples > 0.6, "el canal en calma");
   assert.ok(by.nosotros.condensation > 0.6, "condensación en el refugio");
-  assert.ok(by.bosque.drip > 0.6, "goteo bajo el dosel");
+  assert.ok(by.proyectos.drip > 0.6, "goteo bajo el dosel");
   assert.equal(by.inicio.ripples, 0);
   assert.equal(by.inicio.condensation, 0);
 });
@@ -102,9 +102,9 @@ test("applyLiveFactor nunca saca rain o mist de su rango 0..1", () => {
 });
 
 test("applyLiveFactor no toca la narrativa por capítulo, solo la escala", () => {
-  // El canal sigue en calma en "territorio" aunque el factor suba: `ripples`
+  // El canal sigue en calma en "servicios" aunque el factor suba: `ripples`
   // no es uno de los campos que el clima real modula.
-  const territorio = CHAPTERS.find((c) => c.id === "territorio").state;
+  const territorio = CHAPTERS.find((c) => c.id === "servicios").state;
   const out = applyLiveFactor(territorio, liveWeatherFactor(65));
   assert.equal(out.ripples, territorio.ripples);
   assert.equal(out.condensation, territorio.condensation);

@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "cisnes-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "4331", "--strictPort"],
+      "port": 4331
+    },
+    {
       "name": "lab-lluvia",
       "runtimeExecutable": "node",
       "runtimeArgs": ["lab/server.mjs"],

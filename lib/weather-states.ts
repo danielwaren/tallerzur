@@ -35,21 +35,22 @@ export type Chapter = { id: string; state: WeatherState };
 
 /**
  * Los seis capítulos. El orden importa: es el orden vertical de la página, y
- * la interpolación cruza entre vecinos según el scroll.
+ * la interpolación cruza entre vecinos según el scroll. La banda de
+ * Mantención (entre servicios y proyectos) no es capítulo: hereda la mezcla.
  */
 export const CHAPTERS: Chapter[] = [
   // Hero — la llegada bajo lluvia densa, viento con rachas.
   { id: "inicio", state: { rain: 1.0, rainSpeed: 1.0, wind: 1.0, mist: 0.28, ripples: 0, condensation: 0, drip: 0 } },
-  // Esencia — la lluvia amaina a garúa; la niebla sube entre los árboles.
-  { id: "esencia", state: { rain: 0.42, rainSpeed: 0.72, wind: 0.5, mist: 0.85, ripples: 0, condensation: 0, drip: 0.18 } },
-  // Territorio — el agua ya cayó: el canal en calma, ondas lentas.
-  { id: "territorio", state: { rain: 0.12, rainSpeed: 0.6, wind: 0.24, mist: 0.5, ripples: 0.82, condensation: 0, drip: 0 } },
+  // Servicios (territorio) — el agua ya cayó: el canal en calma, ondas lentas.
+  { id: "servicios", state: { rain: 0.12, rainSpeed: 0.6, wind: 0.24, mist: 0.5, ripples: 0.82, condensation: 0, drip: 0 } },
+  // Proyectos — bajo el dosel: goteo denso y lento desde las hojas.
+  { id: "proyectos", state: { rain: 0.32, rainSpeed: 0.54, wind: 0.32, mist: 0.68, ripples: 0, condensation: 0, drip: 0.92 } },
   // Nosotros — la mesa, el refugio: condensación en el vidrio.
   { id: "nosotros", state: { rain: 0.05, rainSpeed: 0.6, wind: 0.18, mist: 0.32, ripples: 0.12, condensation: 0.9, drip: 0 } },
-  // Bosque — bajo el dosel: goteo denso y lento desde las hojas.
-  { id: "bosque", state: { rain: 0.32, rainSpeed: 0.54, wind: 0.32, mist: 0.68, ripples: 0, condensation: 0, drip: 0.92 } },
-  // Llegar — escampa. Queda el aire limpio.
-  { id: "llegar", state: { rain: 0, rainSpeed: 0.6, wind: 0.14, mist: 0.1, ripples: 0.06, condensation: 0, drip: 0 } },
+  // Preguntas — garúa leve, casi nada.
+  { id: "preguntas", state: { rain: 0.16, rainSpeed: 0.58, wind: 0.2, mist: 0.24, ripples: 0, condensation: 0.1, drip: 0.2 } },
+  // Contacto — escampa. Queda el aire limpio, nada encima del formulario.
+  { id: "contacto", state: { rain: 0, rainSpeed: 0.6, wind: 0.14, mist: 0.1, ripples: 0.06, condensation: 0, drip: 0 } },
 ];
 
 const KEYS: (keyof WeatherState)[] = ["rain", "rainSpeed", "wind", "mist", "ripples", "condensation", "drip"];
@@ -107,7 +108,7 @@ export function chapterIndexFromScroll(viewportCenterY: number, centers: number[
  * El clima real de Puerto Cisnes, multiplicado sobre la narrativa.
  *
  * No sustituye la historia por capítulo — el canal sigue en calma en
- * "territorio" aunque afuera esté lloviendo a cántaros — solo la intensifica o
+ * "servicios" aunque afuera esté lloviendo a cántaros — solo la intensifica o
  * la atenúa. `code` es el código WMO que devuelve Open-Meteo
  * (`weather_code`), la misma API que ya usa tallerzur.cl para su widget de
  * clima. Factor neutro (1,1,1) si no hay dato: el sitio se ve exactamente

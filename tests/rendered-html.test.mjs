@@ -99,3 +99,111 @@ test("el contacto es el real de TallerZur, no el placeholder de Puerto Cisnes", 
   assert.match(html, /hola@tallerzur\.cl/i);
   assert.match(html, /wa\.me\/56940068228/);
 });
+
+/* ── Fase 4 · comercial ─────────────────────────────────────────────── */
+
+const jsonLdBlocks = (html) =>
+  [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>(.*?)<\/script>/gis)].map((m) => JSON.parse(m[1]));
+
+test("el hero vende en el primer pantallazo: línea de valor y dos CTA", async () => {
+  const html = await renderHome();
+  const hero = html.match(/<section[^>]*id="inicio"[\s\S]*?<\/section>/i)?.[0] ?? "";
+  assert.match(hero, /Sitios web y mantención para hostales/i, "falta la línea de valor");
+  assert.match(hero, /href="https:\/\/wa\.me\/56940068228[^"]*"[^>]*>\s*Hablemos por WhatsApp/i);
+  assert.match(hero, /href="#proyectos"[^>]*>\s*Ver proyectos/i);
+  assert.match(hero, /Donde el bosque/i, "el titular poético se mantiene");
+});
+
+test("ya no hay cargador bloqueante ni sección Esencia", async () => {
+  const html = await renderHome();
+  assert.doesNotMatch(html, /class="loader"/);
+  assert.doesNotMatch(html, /id="esencia"/);
+});
+
+test("navegación a Servicios, Proyectos, Preguntas y Contacto", async () => {
+  const html = await renderHome();
+  for (const id of ["servicios", "proyectos", "preguntas", "contacto", "mantencion"]) {
+    assert.match(html, new RegExp(`id="${id}"`), `falta la sección #${id}`);
+  }
+  const nav = html.match(/<nav[^>]*class="header-nav"[\s\S]*?<\/nav>/i)?.[0] ?? "";
+  for (const id of ["servicios", "proyectos", "preguntas", "contacto"]) {
+    assert.match(nav, new RegExp(`href="#${id}"`), `el header no enlaza a #${id}`);
+  }
+});
+
+test("cada servicio tiene un CTA que preselecciona el servicio en el contacto", async () => {
+  const html = await renderHome();
+  for (const id of ["desarrollo", "mantencion", "digitales"]) {
+    assert.match(html, new RegExp(`href="/\\?servicio=${id}#contacto"`), `falta el CTA de ${id}`);
+  }
+  assert.match(html, /Servicio estrella/i, "la mantención va destacada");
+  assert.match(html, /menos de 4 horas hábiles/i);
+});
+
+test("proyectos con captura autoalojada, año, stack y enlace en vivo", async () => {
+  const html = await renderHome();
+  for (const site of ["hostalmonchito.cl", "subelab.com", "nutme.cl"]) {
+    assert.match(html, new RegExp(`href="https://www\\.${site.replace(".", "\\.")}"`), `falta ${site}`);
+  }
+  assert.match(html, /\/images\/proyectos\/hostalmonchito\.avif/);
+  assert.doesNotMatch(html, /s\.wordpress\.com\/mshots/, "las capturas ya no se piden en vivo");
+});
+
+test("todas las imágenes declaran width y height", async () => {
+  const html = await renderHome();
+  const imgs = html.match(/<img\b[^>]*>/gi) ?? [];
+  assert.ok(imgs.length >= 7);
+  for (const img of imgs) {
+    assert.match(img, /\bwidth="\d+"/, `sin width: ${img.slice(0, 80)}`);
+    assert.match(img, /\bheight="\d+"/, `sin height: ${img.slice(0, 80)}`);
+  }
+});
+
+test("sin terceros en la ruta crítica de imágenes (Wikimedia retirado)", async () => {
+  const html = await renderHome();
+  assert.doesNotMatch(html, /upload\.wikimedia\.org/);
+});
+
+test("preguntas frecuentes en <details> y JSON-LD FAQPage con las mismas preguntas", async () => {
+  const html = await renderHome();
+  const details = html.match(/<details\b/gi) ?? [];
+  assert.ok(details.length >= 5, `hay ${details.length} preguntas`);
+  const faq = jsonLdBlocks(html).find((d) => d["@type"] === "FAQPage");
+  assert.ok(faq, "falta FAQPage");
+  assert.equal(faq.mainEntity.length, details.length);
+  for (const q of faq.mainEntity) {
+    const visible = q.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    assert.match(html, new RegExp(`<summary[^>]*>${visible}`), `pregunta sin versión visible: ${q.name}`);
+  }
+});
+
+test("ProfessionalService sirve a las 10 comunas de Aysén y no publica precios", async () => {
+  const html = await renderHome();
+  const org = jsonLdBlocks(html).find((d) => d["@type"] === "ProfessionalService");
+  const names = org.areaServed.map((a) => a.name).join(" | ");
+  for (const comuna of ["Guaitecas", "Cisnes", "Lago Verde", "Aysén", "Coyhaique", "Río Ibáñez", "Chile Chico", "Cochrane", "O'Higgins", "Tortel"]) {
+    assert.ok(names.includes(`Comuna de ${comuna}`), `falta ${comuna}`);
+  }
+  assert.equal(org.priceRange, undefined, "el sitio no publica cifras");
+});
+
+test("la imagen para compartir es un JPEG 1200×630", async () => {
+  const html = await renderHome();
+  assert.match(html, /property="og:image"[^>]+content="[^"]+\/images\/og-tallerzur\.jpg"/i);
+  assert.match(html, /property="og:image:width"[^>]+content="1200"/i);
+  assert.match(html, /property="og:image:height"[^>]+content="630"/i);
+});
+
+test("formulario de contacto completo, con honeypot y comunas de Aysén", async () => {
+  const html = await renderHome();
+  const form = html.match(/<form[^>]*class="contact-form"[\s\S]*?<\/form>/i)?.[0] ?? "";
+  assert.match(form, /action="\/api\/contacto"/);
+  assert.match(form, /method="post"/i);
+  for (const name of ["nombre", "negocio", "comuna", "rubro", "sitio", "servicio", "mensaje", "contacto", "website"]) {
+    assert.match(form, new RegExp(`name="${name}"`), `falta el campo ${name}`);
+  }
+  for (const name of ["nombre", "negocio", "comuna", "rubro", "sitio", "servicio", "mensaje", "contacto"]) {
+    assert.match(form, new RegExp(`<label[^>]+for="contacto-${name}"`), `el campo ${name} no tiene label`);
+  }
+  assert.equal((form.match(/<option value="(Guaitecas|Cisnes|Lago Verde|Aysén|Coyhaique|Río Ibáñez|Chile Chico|Cochrane|O&#x27;Higgins|O'Higgins|Tortel)"/g) ?? []).length, 10);
+});
