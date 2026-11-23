@@ -87,6 +87,9 @@ export default function PageEffects() {
           const gsap = gsapModule.gsap;
           const ScrollTrigger = scrollModule.ScrollTrigger;
           gsap.registerPlugin(ScrollTrigger);
+          // La barra del navegador móvil cambia el alto al hacer scroll: sin
+          // esto, ScrollTrigger recalculaba todo y las tarjetas saltaban.
+          ScrollTrigger.config({ ignoreMobileResize: true });
           const ctx = gsap.context(() => {
             const hero = gsap.timeline({
               scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: .6 },
@@ -147,10 +150,12 @@ export default function PageEffects() {
             gsap.timeline({
               scrollTrigger: { trigger: ".company", start: "top bottom", end: "bottom bottom", scrub: .7 },
             })
-              .fromTo(".company-bg", { opacity: .2, scale: 1.04 }, { opacity: 1, scale: 1, ease: "none" }, 0)
+              .fromTo(".company-bg", { scale: 1.04 }, { scale: 1, ease: "none" }, 0)
               .fromTo(".company-bg img", { scale: 1.12, yPercent: -5 }, { scale: 1.02, yPercent: 3, ease: "none" }, 0)
               .fromTo(".company-title", { yPercent: 18 }, { yPercent: 0, ease: "power2.out" }, 0);
           }, document.querySelector(".site") ?? undefined);
+          // Las fuentes cambian la altura del texto: un solo recálculo cuando llegan.
+          void document.fonts?.ready.then(() => { if (!cancelled) ScrollTrigger.refresh(); });
           revert = () => ctx.revert();
         })
         .catch(() => {

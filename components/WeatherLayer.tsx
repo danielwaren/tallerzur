@@ -53,8 +53,15 @@ export default function WeatherLayer() {
 
     const finePointer = window.matchMedia("(pointer: fine)").matches;
 
-    let width = 0, height = 0;
+    // `height` es el alto del lienzo (el mayor que ha tenido la ventana: así
+    // cubre la pantalla aunque la barra del navegador móvil aparezca o se
+    // esconda). `viewH` es el alto visible real, para saber qué capítulo hay
+    // en el centro de la pantalla.
+    let width = 0, height = 0, viewH = 0;
+    // Calidad adaptativa: 1 = todo. Se interpola hacia `qualityTarget`, así
+    // que los cambios nunca son de golpe (antes se truncaban los arreglos).
     let quality = 1;
+    let qualityTarget = 1;
     let field: Field = createField(1, 1);
     let drops: Drop[] = [];
     let motes: Mote[] = [];
@@ -83,7 +90,7 @@ export default function WeatherLayer() {
       }).filter((n) => Number.isFinite(n));
     };
     const updateTarget = () => {
-      const index = chapterIndexFromScroll(window.scrollY + height / 2, centers);
+      const index = chapterIndexFromScroll(window.scrollY + viewH / 2, centers);
       target = applyLiveFactor(resolveWeather(index), live);
     };
 
@@ -91,6 +98,37 @@ export default function WeatherLayer() {
     const ring = { x: -999, y: -999 };
     let actionable = false;
     let lastMoveAt = performance.now();
+
+    /**
+     * Sprites: la niebla y las gotas de condensación eran ~75 degradados
+     * radiales creados en cada cuadro (y basura para el recolector, que se
+     * notaba como tirones). Ahora se pintan una vez y se estampan con
+     * drawImage + globalAlpha, que es lo más barato que hay en un canvas 2D.
+     */
+    const makeSprite = (size: number, paint: (g: CanvasRenderingContext2D, r: number) => void) => {
+      const sprite = document.createElement("canvas");
+      sprite.width = sprite.height = size;
+      const g = sprite.getContext("2d");
+      if (g) paint(g, size / 2);
+      return sprite;
+    };
+    const fogSprite = makeSprite(256, (g, r) => {
+      const grad = g.createRadialGradient(r, r, 0, r, r, r);
+      grad.addColorStop(0, "rgba(210,222,214,1)");
+      grad.addColorStop(1, "rgba(210,222,214,0)");
+      g.fillStyle = grad;
+      g.fillRect(0, 0, r * 2, r * 2);
+    });
+    const beadSprite = makeSprite(64, (g, r) => {
+      const grad = g.createRadialGradient(r * 0.7, r * 0.7, 0, r, r, r);
+      grad.addColorStop(0, "rgba(232,244,238,.5)");
+      grad.addColorStop(0.7, "rgba(200,218,210,.22)");
+      grad.addColorStop(1, "rgba(180,200,192,.05)");
+      g.fillStyle = grad;
+      g.beginPath();
+      g.arc(r, r, r, 0, 6.2832);
+      g.fill();
+    });
 
     const newDrop = (scatter: boolean): Drop => {
       const d = Math.pow(Math.random(), 1.55);   // más gotas lejanas que cercanas
@@ -111,20 +149,32 @@ export default function WeatherLayer() {
       vy: 0,
     });
 
-    const resize = () => {
+    // Alto "grande" de la pantalla (100lvh): con la barra del navegador
+    // escondida. Se mide una vez con un elemento de prueba.
+    const largeViewportHeight = () => {
+      const probe = document.createElement("div");
+      probe.style.cssText = "position:fixed;top:0;left:0;width:0;height:100lvh;visibility:hidden;pointer-events:none";
+      document.body.appendChild(probe);
+      const h = probe.getBoundingClientRect().height;
+      probe.remove();
+      return Math.max(window.innerHeight, h || 0);
+    };
+
+    const build = () => {
       // En pantallas táctiles (celulares) la lluvia no necesita retina: con
       // 1,25× se ve igual y se pintan ~2,5 veces menos píxeles por frame.
       const ratio = Math.min(window.devicePixelRatio || 1, finePointer ? 2 : 1.25);
       width = window.innerWidth;
-      height = window.innerHeight;
+      viewH = window.innerHeight;
+      height = Math.round(largeViewportHeight());
       canvas.width = width * ratio;
       canvas.height = height * ratio;
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       field = createField(width, height);
-      drops = Array.from({ length: Math.round(Math.min(340, width / 4.4) * quality) }, () => newDrop(true));
-      motes = Array.from({ length: Math.round(190 * quality) }, () => ({
+      drops = Array.from({ length: Math.round(Math.min(340, width / 4.4)) }, () => newDrop(true));
+      motes = Array.from({ length: 190 }, () => ({
         x: Math.random() * width, y: Math.random() * height,
         d: 0.25 + Math.random() * 0.75, s: 0.45 + Math.random() * 1.25,
       }));
@@ -133,14 +183,46 @@ export default function WeatherLayer() {
         r: height * (0.35 + Math.random() * 0.4),
         vx: (0.4 + Math.random() * 0.7) * (i % 2 ? 1 : -1), phase: Math.random() * 6.28,
       }));
-      beads = Array.from({ length: Math.round(70 * quality) }, newBead);
-      drips = Array.from({ length: Math.round(60 * quality) }, () => ({
+      beads = Array.from({ length: 70 }, newBead);
+      drips = Array.from({ length: 60 }, () => ({
         x: Math.random() * width, y: -Math.random() * height, vy: 0,
         len: 5 + Math.random() * 9,
       }));
       splashes = [];
       measure();
       updateTarget();
+    };
+
+    /**
+     * Antes, cada `resize` reconstruía todo: en el celular la barra del
+     * navegador cambia el alto al hacer scroll, y la lluvia se reiniciaba
+     * (el "colapso"). Ahora solo se reconstruye si cambia el ancho o el alto
+     * más de un 20 %; si no, el lienzo ya cubre el alto grande y solo se
+     * actualiza el alto visible.
+     */
+    let resizeTimer = 0;
+    const onResize = () => {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        const widthChanged = window.innerWidth !== width;
+        const bigHeightChange = Math.abs(window.innerHeight - viewH) > viewH * 0.2;
+        if (widthChanged || bigHeightChange) build();
+        else {
+          viewH = window.innerHeight;
+          // Si la ventana creció un poco por sobre el lienzo, se agranda solo
+          // el lienzo: las gotas siguen donde estaban.
+          if (viewH > height) {
+            const ratio = canvas.width / width;
+            height = viewH;
+            canvas.height = Math.round(height * ratio);
+            canvas.style.height = `${height}px`;
+            ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+            field = createField(width, height);
+          }
+          measure();
+          updateTarget();
+        }
+      }, 150);
     };
 
     const move = (event: PointerEvent) => {
@@ -163,50 +245,58 @@ export default function WeatherLayer() {
 
     // ── niebla: manchas suaves que suben y derivan ────────────────────────
     const drawFog = (dt: number, t: number) => {
-      if (weather.mist < 0.01) return;
+      // Con calidad baja la niebla se desvanece (antes se apagaba de golpe).
+      const level = Math.min(1, Math.max(0, (quality - 0.45) / 0.3));
+      const alpha = weather.mist * 0.05 * level;
+      if (alpha < 0.0005) return;
       ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = alpha;
       for (const f of fogs) {
         f.x += f.vx * (0.4 + weather.mist * 0.6) * 60 * dt;
         if (f.x < -f.r) f.x = width + f.r; else if (f.x > width + f.r) f.x = -f.r;
         const drift = Math.sin(t * 0.2 + f.phase) * 14;
-        const g = ctx.createRadialGradient(f.x, f.y + drift, 0, f.x, f.y + drift, f.r);
-        const a = weather.mist * 0.05;
-        g.addColorStop(0, `rgba(210,222,214,${a})`);
-        g.addColorStop(1, "rgba(210,222,214,0)");
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(f.x, f.y + drift, f.r, 0, 6.2832);
-        ctx.fill();
+        ctx.drawImage(fogSprite, f.x - f.r, f.y + drift - f.r, f.r * 2, f.r * 2);
       }
+      ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = "source-over";
     };
 
     // ── aire: motas de garúa arrastradas por el campo de viento ───────────
+    const airBuckets = [
+      { limit: 0.5, dot: 0.077, line: 0.089, width: 1.4, dots: new Path2D(), lines: new Path2D() },
+      { limit: 0.78, dot: 0.095, line: 0.113, width: 1.85, dots: new Path2D(), lines: new Path2D() },
+      { limit: 1.01, dot: 0.113, line: 0.137, width: 2.3, dots: new Path2D(), lines: new Path2D() },
+    ];
     const drawAir = (windX: number, dt: number) => {
-      ctx.globalCompositeOperation = "lighter";
-      for (const m of motes) {
+      for (const b of airBuckets) { b.dots = new Path2D(); b.lines = new Path2D(); }
+      const count = Math.round(motes.length * (0.4 + quality * 0.6));
+      for (let i = 0; i < count; i++) {
+        const m = motes[i];
         sampleField(field, m.x, m.y, sampled);
         const respond = 0.55 + m.d * 1.05;
         m.x += (windX * 0.16 * m.d + sampled.x * respond) * dt;
         m.y += (7 * m.d + sampled.y * respond) * dt;
         if (m.x < -20) m.x = width + 20; else if (m.x > width + 20) m.x = -20;
         if (m.y < -20) m.y = height + 20; else if (m.y > height + 20) m.y = -20;
-        const radius = m.s * (0.7 + m.d * 0.9);
+        const bucket = m.d < 0.5 ? airBuckets[0] : m.d < 0.78 ? airBuckets[1] : airBuckets[2];
         const carried = Math.hypot(sampled.x, sampled.y) * respond;
         if (carried > 40) {
-          ctx.beginPath();
-          ctx.moveTo(m.x, m.y);
-          ctx.lineTo(m.x - sampled.x * respond * 0.02, m.y - sampled.y * respond * 0.02);
-          ctx.strokeStyle = `rgba(206,236,220,${0.05 + m.d * 0.09})`;
-          ctx.lineWidth = radius * 1.5;
-          ctx.lineCap = "round";
-          ctx.stroke();
+          bucket.lines.moveTo(m.x, m.y);
+          bucket.lines.lineTo(m.x - sampled.x * respond * 0.02, m.y - sampled.y * respond * 0.02);
         } else {
-          ctx.beginPath();
-          ctx.arc(m.x, m.y, radius, 0, 6.2832);
-          ctx.fillStyle = `rgba(214,232,220,${0.05 + m.d * 0.07})`;
-          ctx.fill();
+          const radius = m.s * (0.7 + m.d * 0.9);
+          bucket.dots.moveTo(m.x + radius, m.y);
+          bucket.dots.arc(m.x, m.y, radius, 0, 6.2832);
         }
+      }
+      ctx.globalCompositeOperation = "lighter";
+      ctx.lineCap = "round";
+      for (const b of airBuckets) {
+        ctx.fillStyle = `rgba(214,232,220,${b.dot})`;
+        ctx.fill(b.dots);
+        ctx.strokeStyle = `rgba(206,236,220,${b.line})`;
+        ctx.lineWidth = b.width;
+        ctx.stroke(b.lines);
       }
       ctx.globalCompositeOperation = "source-over";
     };
@@ -219,7 +309,7 @@ export default function WeatherLayer() {
 
     // ── lluvia: densidad y velocidad las marca el capítulo ────────────────
     const drawRain = (windX: number, dt: number) => {
-      const active = Math.round(drops.length * weather.rain);
+      const active = Math.round(drops.length * weather.rain * quality);
       if (active > 0) {
         ctx.globalCompositeOperation = "lighter";
         ctx.lineCap = "round";
@@ -300,8 +390,10 @@ export default function WeatherLayer() {
     // ── condensación: gotas en el vidrio que resbalan y dejan reguero ─────
     const drawCondensation = (dt: number) => {
       if (weather.condensation < 0.01) return;
-      const active = Math.round(beads.length * weather.condensation);
+      const active = Math.round(beads.length * weather.condensation * quality);
       const alpha = weather.condensation;
+      const trails = new Path2D();
+      ctx.globalAlpha = alpha;
       for (let i = 0; i < active; i++) {
         const b = beads[i];
         if (!b.sliding) {
@@ -311,32 +403,25 @@ export default function WeatherLayer() {
           b.vy += 240 * dt;
           b.y += b.vy * dt;
           // reguero: línea fina que deja al bajar
-          ctx.beginPath();
-          ctx.moveTo(b.x, b.y);
-          ctx.lineTo(b.x, b.y - b.vy * dt - b.r);
-          ctx.strokeStyle = `rgba(214,230,222,${alpha * 0.16})`;
-          ctx.lineWidth = b.r * 0.5;
-          ctx.lineCap = "round";
-          ctx.stroke();
+          trails.moveTo(b.x, b.y);
+          trails.lineTo(b.x, b.y - b.vy * dt - b.r);
           if (b.y > height + 10) Object.assign(b, newBead());
         }
         // la gota: brillo con realce arriba-izquierda, como vidrio real
-        const g = ctx.createRadialGradient(b.x - b.r * 0.3, b.y - b.r * 0.3, 0, b.x, b.y, b.r);
-        g.addColorStop(0, `rgba(232,244,238,${alpha * 0.5})`);
-        g.addColorStop(0.7, `rgba(200,218,210,${alpha * 0.22})`);
-        g.addColorStop(1, `rgba(180,200,192,${alpha * 0.05})`);
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.r, 0, 6.2832);
-        ctx.fill();
+        ctx.drawImage(beadSprite, b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
       }
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = `rgba(214,230,222,${alpha * 0.16})`;
+      ctx.lineWidth = 1.3;
+      ctx.lineCap = "round";
+      ctx.stroke(trails);
     };
 
-    // ── goteo: gotas pesadas y lentas desde el borde superior (dosel) ─────
+        // ── goteo: gotas pesadas y lentas desde el borde superior (dosel) ─────
     const drawDrip = (windX: number, dt: number) => {
       if (weather.drip < 0.01) return;
-      const active = Math.round(drips.length * weather.drip);
-      ctx.globalCompositeOperation = "lighter";
+      const active = Math.round(drips.length * weather.drip * quality);
+      const path = new Path2D();
       for (let i = 0; i < active; i++) {
         const d = drips[i];
         d.vy += 520 * dt;
@@ -347,14 +432,14 @@ export default function WeatherLayer() {
           d.x = Math.random() * width; d.y = -10 - Math.random() * height * 0.5; d.vy = 0;
           d.len = 5 + Math.random() * 9;
         }
-        ctx.beginPath();
-        ctx.moveTo(d.x, d.y);
-        ctx.lineTo(d.x, d.y - d.len - d.vy * EXPOSURE * 0.5);
-        ctx.strokeStyle = `rgba(210,230,220,${weather.drip * 0.22})`;
-        ctx.lineWidth = 1.6;
-        ctx.lineCap = "round";
-        ctx.stroke();
+        path.moveTo(d.x, d.y);
+        path.lineTo(d.x, d.y - d.len - d.vy * EXPOSURE * 0.5);
       }
+      ctx.globalCompositeOperation = "lighter";
+      ctx.strokeStyle = `rgba(210,230,220,${weather.drip * 0.22})`;
+      ctx.lineWidth = 1.6;
+      ctx.lineCap = "round";
+      ctx.stroke(path);
       ctx.globalCompositeOperation = "source-over";
     };
 
@@ -394,26 +479,68 @@ export default function WeatherLayer() {
 
     let frame = 0;
     let last = performance.now();
-    // Calidad adaptativa: si los cuadros tardan demasiado (celular de gama
-    // baja, sin GPU), se recortan partículas y después la niebla. Nunca al
-    // revés: una vez que bajó, no vuelve a subir y no oscila.
+    const bootedAt = performance.now();
+
+    /**
+     * Calidad adaptativa, versión tranquila: promedio largo del costo por
+     * cuadro, sin medir los primeros 2 s (carga de imágenes y de GSAP) ni los
+     * cuadros que vienen de una pestaña oculta. Baja de a 0,2 si el promedio
+     * pasa de 11 ms y sube de a 0,1 si queda bajo 4,5 ms, con 3 s de pausa
+     * entre ajustes. `quality` persigue al objetivo suavemente.
+     */
     let frameCost = 0;
-    let frameSamples = 0;
-    let fogEnabled = true;
-    const degrade = () => {
-      quality *= 0.6;
-      drops.length = Math.round(drops.length * 0.6);
-      motes.length = Math.round(motes.length * 0.5);
-      beads.length = Math.round(beads.length * 0.6);
-      drips.length = Math.round(drips.length * 0.6);
-      if (quality < 0.5) fogEnabled = false;
-      frameSamples = 0;
-      frameCost = 0;
+    let measured = 0;
+    let lastAdjust = bootedAt;
+    const adapt = (now: number, cost: number, rawDt: number, dt: number) => {
+      if (rawDt < 0.05 && now - bootedAt > 2000) {
+        frameCost = measured ? frameCost * 0.96 + cost * 0.04 : cost;
+        measured++;
+      }
+      if (measured > 120 && now - lastAdjust > 3000) {
+        if (frameCost > 11 && qualityTarget > 0.35) {
+          qualityTarget = Math.max(0.35, qualityTarget - 0.2);
+          lastAdjust = now; measured = 0;
+        } else if (frameCost < 4.5 && qualityTarget < 1) {
+          qualityTarget = Math.min(1, qualityTarget + 0.1);
+          lastAdjust = now; measured = 0;
+        }
+      }
+      quality += (qualityTarget - quality) * (1 - Math.pow(0.35, dt));
+    };
+
+    /**
+     * El contacto va por encima del lienzo: mientras lo tapa entero, dibujar
+     * es trabajo invisible (justo cuando la persona escribe en el formulario).
+     * Se pausa el bucle y se reanuda al salir.
+     */
+    let covered = false;
+    let running = false;
+    const contact = document.getElementById("contacto");
+    // Una lectura de rect por cuadro de scroll (ya limitado con rAF). Un
+    // IntersectionObserver no sirve aquí: sus umbrales se miden sobre el alto
+    // de la sección, que es más alta que la pantalla.
+    const checkCover = () => {
+      if (!contact) return;
+      const rect = contact.getBoundingClientRect();
+      covered = rect.top <= 0.5 && rect.bottom >= window.innerHeight - 0.5;
+      if (!covered && !running) resume();
+    };
+    const resume = () => {
+      if (running) return;
+      running = true;
+      last = performance.now();
+      frame = window.requestAnimationFrame(draw);
     };
 
     const draw = (now: number) => {
+      if (covered) {
+        ctx.clearRect(0, 0, width, height);
+        running = false;
+        return;
+      }
       const started = performance.now();
-      const dt = Math.min(0.05, Math.max(0.004, (now - last) / 1000));
+      const rawDt = (now - last) / 1000;
+      const dt = Math.min(0.05, Math.max(0.004, rawDt));
       last = now;
       const t = now / 1000;
 
@@ -434,7 +561,7 @@ export default function WeatherLayer() {
       stepField(field, dt);
 
       ctx.clearRect(0, 0, width, height);
-      if (fogEnabled) drawFog(dt, t);
+      drawFog(dt, t);
       drawRipples(t);
       drawAir(windX, dt);
       drawRain(windX, dt);
@@ -442,8 +569,7 @@ export default function WeatherLayer() {
       drawCondensation(dt);
       drawCursor(dt);
 
-      frameCost = frameCost * 0.9 + (performance.now() - started) * 0.1;
-      if (++frameSamples > 40 && frameCost > 8 && quality > 0.3) degrade();
+      adapt(now, performance.now() - started, rawDt, dt);
       frame = window.requestAnimationFrame(draw);
     };
 
@@ -451,7 +577,7 @@ export default function WeatherLayer() {
     const onScroll = () => {
       if (scrollTick) return;
       scrollTick = true;
-      window.requestAnimationFrame(() => { updateTarget(); scrollTick = false; });
+      window.requestAnimationFrame(() => { updateTarget(); checkCover(); scrollTick = false; });
     };
 
     let liveTimer = 0;
@@ -471,15 +597,16 @@ export default function WeatherLayer() {
     let started = false;
     const start = () => {
       started = true;
-      resize();
-      window.addEventListener("resize", resize);
+      build();
+      window.addEventListener("resize", onResize);
       window.addEventListener("scroll", onScroll, { passive: true });
       if (finePointer) {
         window.addEventListener("pointermove", move, { passive: true });
         document.documentElement.addEventListener("pointerleave", leave);
         document.body.classList.add("has-custom-cursor");
       }
-      frame = window.requestAnimationFrame(draw);
+      resume();
+      checkCover();
       void fetchLiveWeather();
       liveTimer = window.setInterval(fetchLiveWeather, LIVE_WEATHER_REFRESH_MS);
     };
@@ -490,7 +617,8 @@ export default function WeatherLayer() {
       if (!started) return;
       window.cancelAnimationFrame(frame);
       window.clearInterval(liveTimer);
-      window.removeEventListener("resize", resize);
+      window.removeEventListener("resize", onResize);
+      window.clearTimeout(resizeTimer);
       window.removeEventListener("scroll", onScroll);
       if (finePointer) {
         window.removeEventListener("pointermove", move);
