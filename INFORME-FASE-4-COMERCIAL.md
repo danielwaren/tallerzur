@@ -49,13 +49,23 @@ nuevos y por separado no compilaba.
 - **Navegación:** header fijo con Servicios · Proyectos · Preguntas · Contacto y un botón de WhatsApp. En el celular, el menú a pantalla completa mantiene la trampa de foco, más un **WhatsApp flotante** que aparece después del hero y se esconde al llegar al contacto.
 - **Preselección del servicio:** funciona con `?servicio=desarrollo|mantencion|digitales|asesoria`, sirve para los enlaces de tus correos de prospección y funciona sin JS.
 
+## 1b. Tarjetas apiladas de "Tres maneras de sostener un sitio"
+
+Se recuperó y modernizó el efecto en que las tarjetas se superponen al hacer scroll:
+
+- **Cómo se ve:** cada servicio queda fijo bajo el header y el siguiente se desliza encima. El anterior se encoge desde arriba y se oscurece, y su borde superior asoma como en un mazo. Al entrar, la foto se abre desde un leve zoom y el texto sube en cascada.
+- **Fluidez:** solo se animan `transform` y `opacity` (el oscurecido es una capa con opacidad, no `filter`), con scrub corto (0,5 s).
+- **Pantallas:** funciona también en el celular. Ahí la foto es flexible y ocupa lo que deja el texto, para que la tarjeta entera quepa.
+- **Red de seguridad:** si en alguna pantalla una tarjeta no cabe (por ejemplo, iPhone SE 375×667), el apilado se apaga solo y las tarjetas fluyen una tras otra. Nunca tapan un CTA.
+- **Comprobado** con hit-test de los tres CTA en 330×640, 375×667, 390×844, 1366×700 y 1440×900. Con `prefers-reduced-motion` no hay apilado.
+
 ## 2. Contacto
 
 - **Campos:** nombre, negocio, comuna (las 10 de Aysén + "Fuera de Aysén"), rubro, sitio actual (opcional), servicio, mensaje y "correo o WhatsApp". Todos tienen label, `autocomplete` e `inputmode` correctos, y fuente de 16 px para que iOS no haga zoom.
 - **Validación:** `lib/contact.ts` es la misma en el navegador y en el servidor. Errores por campo con `aria-describedby`, y el foco salta al primer campo con error.
 - **`POST /api/contacto`:**
   - Responde JSON al formulario con JS y una página HTML legible a navegadores sin JS.
-  - Envía con `fetch` a la API de Resend, sin SDK, a hola@tallerzur.cl, con `reply_to` si la persona dejó correo.
+  - Envía con `fetch` a la API de Resend, sin SDK, a **danielguz.ga@gmail.com** (correo provisorio hasta tener el corporativo; se cambia en `CONTACT_EMAIL`, en `lib/contact.ts`, y cambia en todo el sitio), con `reply_to` si la persona dejó correo.
   - Antispam: honeypot y marca de tiempo (rechaza envíos en menos de 3 s). A un bot se le responde "ok" sin enviar nada.
   - Sin `RESEND_API_KEY` responde 503 `no-config`.
 - **Estados:** "Enviando…" · "Listo, {nombre}. Te respondemos en menos de 24 horas." · error. Si falla el envío o falta la clave, aparece un botón **"Enviar por WhatsApp" que ya lleva escrito lo que la persona puso en el formulario**.
@@ -131,7 +141,8 @@ scroll en un celular real.
 3. **Plazos típicos** para la FAQ "¿Cuánto se demora?". Hoy dice que el plazo va por escrito en la cotización. Si me das un rango, lo agrego.
 4. **Mantención a sitios hechos por otros.** En el plan propuse "la hayamos hecho nosotros o no". Como no lo confirmaste, el texto dice "cualquier negocio que ya tiene web y no puede quedarse sin ella en temporada". Si atiendes sitios de terceros, conviene decirlo explícito.
 5. **Resend, antes de publicar:**
-   - Verificar el dominio `tallerzur.cl` en Resend (el remitente por defecto es `TallerZur web <web@tallerzur.cl>`; se cambia con la variable `CONTACT_FROM`).
+   - Mientras no haya dominio verificado, el remitente es `onboarding@resend.dev`, y Resend solo deja enviar al correo dueño de la cuenta: **crea la cuenta de Resend con danielguz.ga@gmail.com**.
+   - Cuando tengas el correo corporativo: verificar `tallerzur.cl` en Resend, poner `CONTACT_FROM="TallerZur <web@tallerzur.cl>"` y cambiar `CONTACT_EMAIL`.
    - Cargar la clave con `wrangler secret put RESEND_API_KEY`.
    - Para probar en local, `.env.local` con `RESEND_API_KEY=...` (ya está en `.gitignore`).
    - Hacer un envío real de prueba.

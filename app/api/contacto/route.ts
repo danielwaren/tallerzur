@@ -16,8 +16,13 @@ import {
  */
 
 const RESEND_URL = "https://api.resend.com/emails";
-/** Requiere el dominio tallerzur.cl verificado en Resend. Se puede cambiar con CONTACT_FROM. */
-const DEFAULT_FROM = "TallerZur web <web@tallerzur.cl>";
+/**
+ * Remitente de prueba de Resend: sin dominio verificado, Resend solo permite
+ * enviar desde onboarding@resend.dev y solo al correo dueño de la cuenta
+ * (por eso la cuenta de Resend tiene que ser la de CONTACT_EMAIL). Cuando
+ * tallerzur.cl esté verificado, poner CONTACT_FROM="TallerZur <web@tallerzur.cl>".
+ */
+const DEFAULT_FROM = "TallerZur web <onboarding@resend.dev>";
 const MAX_BODY_BYTES = 32 * 1024;
 
 type Result =

@@ -189,7 +189,7 @@ test("ruta: JSON roto → 400", async () => {
   assert.equal((await response.json()).code, "bad-request");
 });
 
-test("ruta: válido y con clave → un solo POST a Resend, a hola@tallerzur.cl", withKey(async () => {
+test("ruta: válido y con clave → un solo POST a Resend, al correo de contacto", withKey(async () => {
   const resend = stubResend();
   try {
     const response = await post({ ...valid, t: String(Date.now() - 10_000) });
@@ -201,7 +201,7 @@ test("ruta: válido y con clave → un solo POST a Resend, a hola@tallerzur.cl",
     assert.equal(init.method, "POST");
     assert.equal(init.headers.Authorization, "Bearer re_test_clave_falsa");
     const payload = JSON.parse(init.body);
-    assert.deepEqual(payload.to, ["hola@tallerzur.cl"]);
+    assert.deepEqual(payload.to, ["danielguz.ga@gmail.com"]);
     assert.equal(payload.reply_to, "ana@example.com");
     assert.match(payload.subject, /Cabañas Río Cisnes/);
     assert.match(payload.text, /Mantención garantizada/);

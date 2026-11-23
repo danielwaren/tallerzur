@@ -96,7 +96,7 @@ test("la sección Nosotros no depende de GSAP para verse", async () => {
 test("el contacto es el real de TallerZur, no el placeholder de Puerto Cisnes", async () => {
   const html = await renderHome();
   assert.doesNotMatch(html, /hola@puertocisnes\.cl/, "ese buzón no existe, era el placeholder del destino turístico");
-  assert.match(html, /hola@tallerzur\.cl/i);
+  assert.match(html, /danielguz\.ga@gmail\.com/i, "correo provisorio hasta el corporativo");
   assert.match(html, /wa\.me\/56940068228/);
 });
 

@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import WeatherLayer from "@/components/WeatherLayer";
 import Picture from "@/components/Picture";
 import SiteHeader from "@/components/SiteHeader";
@@ -75,8 +76,13 @@ export default function Home() {
             <p>El código no es un adorno.<br />Es lo que sostiene el negocio.</p>
           </div>
           <div className="projects-stack">
-            {SERVICES.map((service) => (
-              <article className={`project-panel project-${service.tone}`} key={service.id} aria-labelledby={`servicio-${service.id}`}>
+            {SERVICES.map((service, index) => (
+              <article
+                className={`project-panel project-${service.tone}`}
+                key={service.id}
+                aria-labelledby={`servicio-${service.id}`}
+                style={{ "--i": index } as CSSProperties}
+              >
                 <div className="project-inner">
                   <div className="project-media">
                     <Picture image={service.image} sizes="(max-width: 760px) 100vw, 62vw" alt="" />
@@ -99,6 +105,7 @@ export default function Home() {
                       {service.cta}<i aria-hidden="true">↗</i>
                     </a>
                   </div>
+                  <div className="project-shade" aria-hidden="true" />
                 </div>
               </article>
             ))}

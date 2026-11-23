@@ -6,7 +6,12 @@
  * cambia una regla, cambia en un solo lugar.
  */
 
-export const CONTACT_EMAIL = "hola@tallerzur.cl";
+/**
+ * Correo de contacto. Provisorio hasta tener el correo corporativo
+ * (hola@tallerzur.cl): cambiarlo aquí lo cambia en todo el sitio, en el
+ * JSON-LD y en el destino de los mensajes del formulario.
+ */
+export const CONTACT_EMAIL = "danielguz.ga@gmail.com";
 export const WHATSAPP_NUMBER = "56940068228";
 export const WHATSAPP_DISPLAY = "+56 9 4006 8228";
 export const WHATSAPP_DEFAULT_TEXT = "Hola TallerZur, quiero conversar sobre una página web para mi negocio.";
@@ -174,7 +179,7 @@ export function validateContact(input: ContactInput): ContactErrors {
   return errors;
 }
 
-/** Correo que recibe hola@tallerzur.cl. Texto plano: nada que escapar en HTML. */
+/** Correo que recibe CONTACT_EMAIL. Texto plano: nada que escapar en HTML. */
 export function buildEmail(input: ContactInput) {
   const subject = `Contacto web: ${input.negocio} (${input.comuna})`.slice(0, 160);
   const lines = [

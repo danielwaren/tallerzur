@@ -36,6 +36,39 @@ export default function PageEffects() {
   }, []);
 
   /**
+   * Red de seguridad del apilado: si en esta pantalla alguna tarjeta no cabe
+   * entera (su contenido desborda), se apaga el sticky y las tarjetas fluyen
+   * una tras otra. Se revisa al cargar, cuando llegan las fuentes (cambian la
+   * altura del texto) y al cambiar el tamaño de la ventana.
+   */
+  useEffect(() => {
+    const stack = document.querySelector<HTMLElement>(".projects-stack");
+    if (!stack) return;
+    let timer = 0;
+    const check = () => {
+      stack.classList.remove("stack-off");
+      const panels = [...stack.querySelectorAll<HTMLElement>(".project-panel")];
+      if (!panels.length || getComputedStyle(panels[0]).position !== "sticky") return;
+      const overflows = panels.some((panel) => {
+        const inner = panel.querySelector<HTMLElement>(".project-inner");
+        const copy = panel.querySelector<HTMLElement>(".project-copy");
+        if (!inner || !copy) return false;
+        // offsetTop/offsetHeight ignoran los transforms de GSAP (scrollHeight
+        // no). En escritorio el texto va alineado abajo y, si no cabe,
+        // desborda hacia arriba (offsetTop negativo); en el celular empuja
+        // hacia abajo.
+        return copy.offsetTop < -1 || copy.offsetTop + copy.offsetHeight > inner.clientHeight + 1;
+      });
+      stack.classList.toggle("stack-off", overflows);
+    };
+    const onResize = () => { window.clearTimeout(timer); timer = window.setTimeout(check, 150); };
+    check();
+    void document.fonts?.ready.then(check);
+    window.addEventListener("resize", onResize);
+    return () => { window.clearTimeout(timer); window.removeEventListener("resize", onResize); };
+  }, []);
+
+  /**
    * Scrubs con GSAP solo si el usuario no pidió menos movimiento, y recién en
    * la primera interacción (scroll, toque, tecla): los scrubs solo existen al
    * desplazarse, y en la posición inicial la página se ve idéntica con o sin
@@ -63,20 +96,43 @@ export default function PageEffects() {
               .to(".hero-bottom", { opacity: 0, y: -20, duration: .3, ease: "power1.in" }, .2)
               .to(".hero-dark", { opacity: .85, duration: .6, ease: "none" }, .4);
 
+            /**
+             * Tarjetas apiladas de servicios. Solo transform y opacity (se
+             * componen en GPU, sin repintar):
+             * - al entrar, la foto se abre desde un leve zoom y el texto sube
+             *   en cascada;
+             * - mientras la siguiente se desliza encima, la anterior se
+             *   encoge desde arriba y se oscurece, como un mazo.
+             */
             const panels = gsap.utils.toArray<HTMLElement>(".project-panel");
+            // Punto donde se fija cada tarjeta (bajo el header). Si no hay
+            // apilado (pantalla baja), la referencia es el borde superior.
+            const stickAt = () => {
+              const top = parseFloat(getComputedStyle(panels[0]).top);
+              return Number.isFinite(top) && getComputedStyle(panels[0]).position === "sticky" ? top : 0;
+            };
             panels.forEach((panel, index) => {
-              gsap.fromTo(panel.querySelector("img"), { scale: 1.12, yPercent: -4 }, {
-                scale: 1.02, yPercent: 4, ease: "none",
-                scrollTrigger: { trigger: panel, start: "top bottom", end: "bottom top", scrub: .8 },
+              const media = panel.querySelector(".project-media");
+              gsap.fromTo(media, { scale: .93, y: 36 }, {
+                scale: 1, y: 0, ease: "none",
+                scrollTrigger: { trigger: panel, start: "top bottom", end: () => `top ${stickAt() + 40}px`, scrub: .5 },
+              });
+              gsap.fromTo(panel.querySelector(".project-media img"), { scale: 1.18, yPercent: -5 }, {
+                scale: 1.04, yPercent: 4, ease: "none",
+                scrollTrigger: { trigger: panel, start: "top bottom", end: "bottom top", scrub: .6 },
+              });
+              gsap.fromTo(panel.querySelectorAll(".project-copy > *"), { y: 28, opacity: 0 }, {
+                y: 0, opacity: 1, stagger: .08, ease: "power2.out",
+                scrollTrigger: { trigger: panel, start: "top 85%", end: () => `top ${stickAt() + 120}px`, scrub: .5 },
               });
               if (index < panels.length - 1) {
-                // Sin `blur`: el oscurecido solo ya da la profundidad y se
-                // compone barato en GPU.
-                gsap.fromTo(panel.querySelector(".project-inner"), {
-                  scale: 1, opacity: 1, filter: "brightness(1)",
-                }, {
-                  scale: .975, opacity: .92, filter: "brightness(.8)", ease: "none",
-                  scrollTrigger: { trigger: panels[index + 1], start: "top bottom", end: "top top", scrub: .8 },
+                const next = panels[index + 1];
+                const behind = { trigger: next, start: "top bottom", end: () => `top ${stickAt()}px`, scrub: .5 };
+                gsap.fromTo(panel.querySelector(".project-inner"), { scale: 1 }, {
+                  scale: .9, ease: "none", scrollTrigger: behind,
+                });
+                gsap.fromTo(panel.querySelector(".project-shade"), { opacity: 0 }, {
+                  opacity: .55, ease: "none", scrollTrigger: { ...behind },
                 });
               }
             });
