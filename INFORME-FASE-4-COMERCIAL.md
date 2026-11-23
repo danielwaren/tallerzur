@@ -192,6 +192,17 @@ scroll en un celular real.
 9. **Coordenadas:** el TODO previo de confirmarlas contra IGM/BCN sigue abierto.
 10. **Detalle menor previo:** al abrir el menú con el mouse, el foco queda en "cerrar" en vez del primer enlace. Con teclado funciona bien.
 
+## 8. Publicación en Vercel
+
+tallerzur.cl se sirve desde Vercel (proyecto `tallerzur`, DNS en Vercel), así que el sitio nuevo se publica ahí, con el mismo flujo:
+
+- **Build:** con la variable `VERCEL` (que Vercel pone sola) o con `DEPLOY_TARGET=nitro`, `vite.config.ts` usa vinext + **Nitro** (soporte oficial de vinext) y genera `.vercel/output` (Build Output API). Sin esas variables, todo sigue igual que antes: Cloudflare para el desarrollo local, los tests y `npm run preview`.
+- **`vercel.json`:** `framework: null`, `npm ci` y `npm run build:vercel`, para que Vercel no use la configuración de Astro del proyecto actual.
+- **Redirecciones 301** del blog viejo: Nitro las convierte en reglas estáticas de Vercel (no pasan por la función). Salen de `lib/redirects.ts`, la misma fuente que usa el worker.
+- **Variables en Vercel** (Settings → Environment Variables): `RESEND_API_KEY` y, opcional, `CONTACT_FROM`.
+- **Verificado en local** con el mismo build de Nitro (preset `node_server`): inicio, lluvia, GSAP, las 301 del blog, 404 con `noindex`, sitemap, robots, imágenes y `/api/contacto` (sin clave responde `no-config`). El preset `vercel` compila y genera las rutas 301 esperadas.
+- **TODO tuyo:** confirmar en Vercel → Settings → Git a qué repositorio está conectado el proyecto, crear el repo o la rama para el sitio nuevo y cargar `RESEND_API_KEY`.
+
 ## 7. Para correrlo
 
 ```
@@ -199,6 +210,7 @@ npm run build:local      # build
 npm run test:unit        # 72 tests (requieren el build)
 npm run preview          # build real en workerd: http://localhost:4173 (o --port)
 npm run dev              # desarrollo
+DEPLOY_TARGET=nitro npm run build:vercel   # build de producción para Vercel
 ```
 
 `vinext start` **no sirve** los CSS, JS ni imágenes de este build (está hecho

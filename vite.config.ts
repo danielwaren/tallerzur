@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import vinext from "vinext";
 import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
@@ -33,7 +34,54 @@ const localBindingConfig = {
     : [],
 };
 
+/**
+ * Destino del build:
+ * - "cloudflare" (por defecto): dev local, `build:local`, tests y `preview`.
+ * - "nitro": producción en Vercel. Se activa solo en Vercel (variable
+ *   VERCEL) o con DEPLOY_TARGET=nitro. Nitro detecta el preset de Vercel y
+ *   emite `.vercel/output` (Build Output API).
+ */
+const useNitro = process.env.DEPLOY_TARGET === "nitro" || Boolean(process.env.VERCEL);
+
+/**
+ * Redirecciones 301 del sitio Astro anterior, desde la misma fuente que usa
+ * el worker de Cloudflare (lib/redirects.ts). En Vercel quedan como reglas
+ * estáticas: no pasan por la función.
+ */
+async function legacyRouteRules() {
+  const { BLOG_REDIRECTS } = await import("./lib/redirects");
+  const rule = (to: string) => ({ redirect: { to, status: 301 as const } });
+  // Nitro genera regex que aceptan la barra final, así que basta una clave
+  // por ruta; las específicas quedan antes del comodín.
+  const rules: Record<string, ReturnType<typeof rule>> = { "/blog": rule("/") };
+  for (const [slug, to] of Object.entries(BLOG_REDIRECTS)) rules[`/blog/${slug}`] = rule(to);
+  rules["/blog/**"] = rule("/");
+  return rules;
+}
+
 export default defineConfig(async () => {
+  const server = {
+    host: "0.0.0.0",
+    allowedHosts: ["terminal.local"],
+    ...(isCodexSeatbeltSandbox
+      ? { watch: { useFsEvents: false, usePolling: true } }
+      : {}),
+  };
+
+  if (useNitro) {
+    const { nitro } = await import("nitro/vite");
+    return {
+      server,
+      // En el entorno de servidor de Nitro, el resolvedor de CSS de Vite no
+      // encuentra el paquete de `@import "tailwindcss"` (con Cloudflare sí).
+      // Se apunta directo a su hoja; @tailwindcss/postcss la procesa igual.
+      resolve: {
+        alias: [{ find: /^tailwindcss$/, replacement: fileURLToPath(new URL("./node_modules/tailwindcss/index.css", import.meta.url)) }],
+      },
+      plugins: [vinext(), nitro({ routeRules: await legacyRouteRules() })],
+    };
+  }
+
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
   process.env.WRANGLER_WRITE_LOGS ??= "false";
@@ -44,13 +92,7 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
-    server: {
-      host: "0.0.0.0",
-      allowedHosts: ["terminal.local"],
-      ...(isCodexSeatbeltSandbox
-        ? { watch: { useFsEvents: false, usePolling: true } }
-        : {}),
-    },
+    server,
     plugins: [
       vinext(),
       sites(),
