@@ -59,10 +59,15 @@ body.has-custom-cursor .arrival :is(input,textarea){cursor:text}
 .text-link:hover i{transform:translate(4px,-4px)}
 
 /* ── Header ──────────────────────────────────────────────────────────── */
-.header{position:fixed;z-index:60;top:0;left:0;width:100%;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:1.5rem var(--gutter);mix-blend-mode:difference;color:#efefe8;isolation:isolate;transition:top .6s var(--ease),left .6s var(--ease),width .6s var(--ease),padding .6s var(--ease),background .45s,border-color .45s,box-shadow .45s,border-radius .6s}
-.header.is-scrolled{top:.8rem;left:1rem;width:calc(100% - 2rem);padding:.75rem 1.2rem;mix-blend-mode:normal;color:#eef0e8;background:rgba(10,13,10,.8);border:1px solid rgba(231,235,225,.14);border-radius:1rem;box-shadow:0 16px 50px rgba(2,5,3,.22),inset 0 1px 0 rgba(255,255,255,.05);-webkit-backdrop-filter:blur(22px) saturate(1.2);backdrop-filter:blur(22px) saturate(1.2)}
+/* La caja del header no cambia de tamaño al hacer scroll (eso era layout
+   en cada cuadro): la "píldora" es un ::before que aparece con opacity y
+   transform. Sin backdrop-filter: detrás está la lluvia, que cambia siempre,
+   y el desenfoque se recalculaba en cada cuadro. */
+.header{position:fixed;z-index:60;top:0;left:0;width:100%;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:1.5rem var(--gutter);mix-blend-mode:difference;color:#efefe8;isolation:isolate}
+.header::before{content:"";position:absolute;z-index:-1;inset:.8rem 1rem;border:1px solid rgba(231,235,225,.14);border-radius:1rem;background:rgba(10,13,10,.93);box-shadow:0 16px 50px rgba(2,5,3,.22),inset 0 1px 0 rgba(255,255,255,.05);opacity:0;transform:translateY(-8px) scale(.985);transition:opacity .45s var(--ease),transform .6s var(--ease);pointer-events:none}
+.header.is-scrolled{mix-blend-mode:normal;color:#eef0e8}
+.header.is-scrolled::before{opacity:1;transform:none}
 .brand{display:flex;flex-direction:column;width:max-content;font-size:.76rem;font-weight:600;line-height:.92;letter-spacing:.08em}
-.header.is-scrolled .brand{letter-spacing:.13em}
 .header-context{justify-self:center;display:grid;grid-template-columns:repeat(5,auto);align-items:center;gap:.72rem;margin:0;font-size:.7rem;text-transform:uppercase;letter-spacing:.14em;white-space:nowrap}
 .header-context small{font:500 .64rem/1 var(--sans);opacity:.56;animation:navContextIn .55s var(--ease)}
 .header-context strong{min-width:6.4rem;font:500 .7rem/1 var(--sans);letter-spacing:.16em;animation:navContextIn .55s var(--ease)}
@@ -82,7 +87,7 @@ body.has-custom-cursor .arrival :is(input,textarea){cursor:text}
 .menu-button{display:none;align-items:center;gap:.75rem;min-height:2.75rem;border:0;padding:0;background:transparent;font-size:.7rem;text-transform:uppercase;letter-spacing:.14em}
 .menu-button i{width:6px;height:6px;border-radius:50%;background:currentColor;transition:transform .35s}
 .menu-button[aria-expanded="true"] i{transform:scale(2.2)}
-.header-progress{position:absolute;left:1.2rem;right:1.2rem;bottom:0;height:1px;overflow:hidden;opacity:0;transition:opacity .4s}
+.header-progress{position:absolute;left:2rem;right:2rem;bottom:.8rem;height:1px;overflow:hidden;opacity:0;transition:opacity .4s}
 .header-progress::after{content:"";display:block;width:100%;height:100%;background:#dfe5db;transform:scaleX(var(--page-progress,0));transform-origin:left;transition:transform .12s linear}
 .header.is-scrolled .header-progress{opacity:.36}
 
@@ -207,25 +212,32 @@ body.has-custom-cursor .arrival :is(input,textarea){cursor:text}
 /* ── Proyectos ───────────────────────────────────────────────────────── */
 /* Usan la misma mecánica de tarjetas apiladas que los servicios
    (.projects-stack / .project-panel); aquí solo cambian tonos y la captura. */
-.work{position:relative;z-index:9;padding:7rem 0 5rem;background:#b9beb4;color:var(--dark)}
+/* Oscuro, para alternar con servicios (claro) y el marco claro de Nosotros. */
+.work{position:relative;z-index:9;padding:7rem 0 5rem;background:#0d110c;color:#e7e9e1}
 .work-intro{display:grid;grid-template-columns:1fr 2.2fr 1fr;gap:1rem 2rem;margin-bottom:3rem;padding:0 var(--gutter)}
 .work-intro h2{grid-column:2;margin:0;font:400 clamp(3.4rem,7vw,7.4rem)/.9 var(--serif);letter-spacing:-.06em}
 .work-intro p:last-child{grid-column:2;margin:0;font:italic 1.05rem/1.5 var(--serif)}
-.project-work-0 .project-inner{background:#a9b1a4}
-.project-work-1 .project-inner{background:#b1b9b6}
-.project-work-2 .project-inner{background:#bab4a8}
+.project-work-0 .project-inner{background:#182019}
+.project-work-1 .project-inner{background:#162024}
+.project-work-2 .project-inner{background:#211e18}
+.project-work .project-inner{box-shadow:0 30px 80px rgba(0,0,0,.45),0 7px 24px rgba(0,0,0,.3)}
+.project-work .project-heading{border-bottom-color:var(--line);color:#c9cdc1}
+.project-work .project-copy h3{color:#eef0e8}
+.project-work .text-link{border-color:var(--line);color:#e7e9e1}
+.project-work .project-media.is-shot{background:#2a3128}
 .project-media.is-shot{display:block;background:#8f978a}
 .project-media.is-shot img{top:0;height:100%;object-position:top center}
 .project-work .project-copy h3{font-size:clamp(2rem,3vw,3.2rem)}
-.work-problem{max-width:30rem;margin:.9rem 0 0;font-size:.9rem;line-height:1.65;color:#262b24}
-.work-problem strong{font-weight:600}
+.work-problem{max-width:30rem;margin:.9rem 0 0;font-size:.9rem;line-height:1.65;color:#c3c8bc}
+.work-problem strong{font-weight:600;color:#eef0e8}
 .work-stack{list-style:none;display:flex;flex-wrap:wrap;gap:.4rem;margin:1.1rem 0 1.2rem;padding:0}
-.work-stack li{padding:.32rem .65rem;border:1px solid rgba(10,12,9,.32);border-radius:999px;font-size:.72rem;letter-spacing:.04em}
+.work-stack li{padding:.32rem .65rem;border:1px solid rgba(231,235,225,.28);color:#d6dacf;border-radius:999px;font-size:.72rem;letter-spacing:.04em}
 
 /* ── Nosotros ────────────────────────────────────────────────────────── */
 /* Ya no es una pantalla fija con un párrafo centrado: frase grande, el
    clima real de Puerto Cisnes en vivo y tres principios de trabajo. */
-.company{position:relative;z-index:9;background:var(--ink);color:var(--paper)}
+/* Marco claro: la foto oscura queda como tarjeta (el inset de .company-bg). */
+.company{position:relative;z-index:9;background:#b9beb4;color:var(--paper)}
 .company-stage{position:relative;display:grid;align-content:center;gap:3.4rem;min-height:100svh;padding:9rem clamp(2rem,5vw,4.5rem) 4.5rem;overflow:hidden}
 .company-bg{position:absolute;inset:1.25rem;overflow:hidden;border-radius:2.4rem;box-shadow:0 38px 100px rgba(0,0,0,.52),0 10px 32px rgba(0,0,0,.28)}
 .company-bg picture{display:contents}
@@ -281,8 +293,8 @@ body.has-custom-cursor .arrival :is(input,textarea){cursor:text}
    - cada tanto, un brillo cruza la píldora. */
 .wa-btn{position:relative;display:flex;align-items:center;gap:.9rem;width:100%;max-width:26rem;padding:.55rem .55rem .55rem .6rem;border-radius:999px;background:var(--dark);color:#eef0e8;overflow:hidden;isolation:isolate;box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 18px 40px -18px rgba(14,20,16,.55);transition:transform .5s var(--ease),box-shadow .5s var(--ease)}
 .wa-btn::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:linear-gradient(90deg,#17432d,#1f5c3d);transform:scaleX(0);transform-origin:left center;transition:transform .7s var(--ease)}
-.wa-btn::after{content:"";position:absolute;top:0;bottom:0;left:-40%;z-index:-1;width:30%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.12),transparent);transform:skewX(-18deg);animation:waShine 6s var(--ease) 2s infinite}
-@keyframes waShine{0%,70%{left:-40%}100%{left:130%}}
+.wa-btn::after{content:"";position:absolute;top:0;bottom:0;left:0;z-index:-1;width:30%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.12),transparent);transform:translateX(-150%) skewX(-18deg);animation:waShine 6s var(--ease) 2s infinite}
+@keyframes waShine{0%,70%{transform:translateX(-150%) skewX(-18deg)}100%{transform:translateX(430%) skewX(-18deg)}}
 .wa-btn:hover{transform:translateY(-2px);box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 24px 48px -18px rgba(14,20,16,.65)}
 .wa-btn:hover::before{transform:scaleX(1)}
 .wa-btn:active{transform:translateY(0) scale(.985);transition-duration:.15s}
@@ -345,13 +357,24 @@ footer{position:relative;z-index:12;padding:7rem var(--gutter) 2rem;background:v
 .footer-links a{display:inline-flex;align-items:center;min-height:2.75rem}
 .footer-links a[href^="mailto"]{text-transform:none;letter-spacing:.04em}
 
+/* ── 404 ─────────────────────────────────────────────────────────────── */
+.lost{position:relative;display:grid;grid-template-rows:auto 1fr auto;min-height:100svh;padding:1.6rem var(--gutter);overflow:hidden;background:#0b0e0a;color:#eef0e8}
+.lost::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,9,7,.55),rgba(6,9,7,.88)),image-set(url(/images/hero-768.avif) type("image/avif"),url(/images/hero-768.webp) type("image/webp")) center/cover;opacity:.9}
+.lost>*{position:relative}
+.lost-body{align-self:center;max-width:46rem}
+.lost h1{margin:1.4rem 0 1.4rem;font:400 clamp(2.8rem,7vw,6.6rem)/.92 var(--serif);letter-spacing:-.05em}
+.lost h1 em{color:#c6d5c4}
+.lost-text{max-width:34rem;margin:0;font-size:1rem;line-height:1.7;color:#c9cdc1}
+.lost-actions{display:flex;flex-wrap:wrap;gap:.8rem;margin-top:2.2rem}
+.lost-coords{margin:0;font-size:.7rem;text-transform:uppercase;letter-spacing:.14em;color:#aeb4a8}
+
 /* ── WhatsApp flotante (solo celular) ────────────────────────────────── */
 .wa-float{display:none}
 
 /* ── Foco y anclas ───────────────────────────────────────────────────── */
 :focus-visible{outline:2px solid #cfe3d6;outline-offset:3px;border-radius:2px}
 .menu nav a:focus-visible{outline-offset:-4px}
-:is(.projects,.work,.arrival,.menu) :focus-visible{outline-color:var(--dark)}
+:is(.projects,.arrival,.menu) :focus-visible{outline-color:var(--dark)}
 :target,section[id]{scroll-margin-top:5.5rem}
 
 /* ── Tablet ──────────────────────────────────────────────────────────── */
@@ -372,7 +395,8 @@ footer{position:relative;z-index:12;padding:7rem var(--gutter) 2rem;background:v
 @media(max-width:760px){
   :root{--gutter:1.2rem;--stack-top:4.7rem}
   .header{padding:1.1rem var(--gutter)}
-  .header.is-scrolled{top:.55rem;left:.55rem;width:calc(100% - 1.1rem);padding:.55rem 1rem;border-radius:.85rem}
+  .header::before{inset:.55rem;border-radius:.85rem}
+  .header-progress{left:1.3rem;right:1.3rem;bottom:.55rem}
   .header-nav,.header-wa{display:none}
   .menu-button{display:flex}
 

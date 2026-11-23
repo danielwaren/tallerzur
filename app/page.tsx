@@ -71,7 +71,7 @@ export default function Home() {
 
         <section id="servicios" className="projects" aria-labelledby="servicios-title">
           <div className="projects-heading">
-            <p className="section-label">territorio</p>
+            <p className="section-label">servicios</p>
             <h2 id="servicios-title">Tres maneras<br />de sostener un sitio.</h2>
             <p>El código no es un adorno.<br />Es lo que sostiene el negocio.</p>
           </div>

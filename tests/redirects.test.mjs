@@ -68,3 +68,14 @@ test("el inicio, el sitemap y robots siguen respondiendo 200", async () => {
   assert.match(sitemap, /<loc>https:\/\/tallerzur\.cl\/?<\/loc>/);
   assert.match(sitemap, /<lastmod>2026-11-23/);
 });
+
+test("una URL inexistente responde 404 con la página propia, sin indexar", async () => {
+  const response = await get("/esta-pagina-no-existe");
+  assert.equal(response.status, 404);
+  const html = await response.text();
+  assert.match(html, /Este sendero/);
+  assert.match(html, /href="\/"[^>]*>\s*Volver al inicio/);
+  assert.match(html, /wa\.me\/56940068228/);
+  assert.match(html, /<meta(?=[^>]*name="robots")(?=[^>]*content="noindex")[^>]*>/i, "la 404 no se indexa");
+  assert.doesNotMatch(html, /weather-canvas/, "la 404 no carga la lluvia");
+});

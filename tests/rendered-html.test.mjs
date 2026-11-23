@@ -233,3 +233,10 @@ test("contacto: botón de WhatsApp con el mensaje ya escrito", async () => {
   assert.match(button, /Escríbenos por WhatsApp/);
   assert.match(html, /<form[^>]*id="contacto-form"/, "el formulario es destino del scroll");
 });
+
+test("la etiqueta de servicios coincide con el menú", async () => {
+  const html = await renderHome();
+  const services = html.match(/<section[^>]*id="servicios"[\s\S]*?<\/section>/i)?.[0] ?? "";
+  assert.match(services, /<p class="section-label">servicios<\/p>/);
+  assert.doesNotMatch(html, />territorio</);
+});

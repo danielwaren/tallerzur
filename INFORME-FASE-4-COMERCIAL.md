@@ -13,7 +13,7 @@ Fraunces/Inter, el tono oscuro y los paneles apilados. Rama
 |---|---|
 | Compilación | ✅ `npm run build:local` limpio |
 | Tipos | ✅ `tsc --noEmit`: los mismos 3 errores previos del andamiaje D1 (`db/index.ts`, `worker/index.ts`), ninguno nuevo |
-| Tests | ✅ **77/77** (`npm run test:unit`) |
+| Tests | ✅ **79/79** (`npm run test:unit`) |
 | Lighthouse móvil (build real, con compresión) | Accesibilidad **100** · Buenas prácticas **100** · SEO **100** · Performance **93–95** con CPU calibrada / **74–80** con el ×4 por defecto (ver §4) |
 | Revisado en el navegador | ✅ 390 px y escritorio (1440 px), en dev y en el build de producción |
 
@@ -73,6 +73,31 @@ Se recuperó y modernizó el efecto en que las tarjetas se superponen al hacer s
   - Al pasar el cursor, un relleno verde barre de izquierda a derecha, el ícono gira apenas y las flechas se cruzan dentro de un círculo que se vuelve claro.
   - En reposo solo late el punto "en línea" y cada tanto cruza un brillo sutil.
   - Solo se animan transform y opacity.
+
+## 1d. Fluidez: por qué "colapsaba" la lluvia y qué se cambió
+
+**Causas encontradas** (en `components/WeatherLayer.tsx` y `globals.css`):
+1. En el celular, la barra del navegador cambia el alto al hacer scroll. Cada cambio reconstruía el lienzo y todas las gotas, la niebla y el vapor: la lluvia se reiniciaba.
+2. La calidad adaptativa recortaba el 40 % de las gotas ante cualquier pico breve, apagaba la niebla a la segunda vez y nunca se recuperaba.
+3. Se creaban ~75 degradados radiales por cuadro, y la basura de memoria provocaba pausas del recolector (tirones intermitentes).
+4. El header usaba `backdrop-filter: blur` encima de la lluvia, que se recalculaba en cada cuadro. Además, el header animaba `top/left/width/padding`, que es layout.
+5. El brillo del botón de WhatsApp animaba `left`.
+6. ScrollTrigger se recalculaba con la barra del navegador móvil.
+
+**Cambios:**
+- El lienzo usa el alto grande de la pantalla (100lvh). Solo se reconstruye si cambia el ancho o el alto más de un 20 %; si la ventana crece un poco, se agranda solo el lienzo y las gotas siguen.
+- La calidad adaptativa ahora es suave y reversible: el multiplicador se interpola, se mide con un promedio largo (no los primeros 2 s ni los cuadros de pestaña oculta), con 3 s entre ajustes. La niebla se desvanece en vez de apagarse.
+- La niebla y la condensación usan sprites precalculados (`drawImage` + `globalAlpha`); las motas, el goteo y los regueros se dibujan en pocos trazos agrupados. Cero degradados por cuadro (medido: 0 en 3 s).
+- Mientras el contacto tapa toda la pantalla, el bucle de la lluvia se pausa (medido: 2 rAF/s contra 64) y se reanuda al salir.
+- Header sin `backdrop-filter`: la píldora es un `::before` que aparece con opacity y transform, y la caja ya no cambia de tamaño. El brillo del botón usa `transform`. Se agregó `ScrollTrigger.config({ ignoreMobileResize: true })` y un `refresh` cuando cargan las fuentes.
+- **Verificado:** al simular la barra móvil (844 → 760 → 900 px) el lienzo no se reconstruye (0 reasignaciones de ancho) y las gotas siguen.
+- **Lighthouse no es comparable esta vez:** la máquina estaba muy cargada (`benchmarkIndex` 105, contra ~700 antes). Aun así, la lluvia pasó de 1,2–2,7 s de CPU por carga a 0,83 s en una máquina más lenta. TODO: medir de nuevo con la máquina libre o en PageSpeed tras publicar.
+
+## 1e. Ritmo de colores, etiqueta y 404
+
+- **Ritmo:** servicios (claro) → **proyectos (oscuro)** → **Nosotros con marco claro** (la foto oscura queda como tarjeta) → preguntas (oscuro) → contacto (claro). La foto de Nosotros ya no entra con opacidad, para que no se vea lavada sobre el marco claro.
+- **Etiqueta:** la de servicios dice "servicios" (antes "territorio"), igual que el menú.
+- **404 propia** (`app/not-found.tsx`): "Este sendero no lleva a ninguna parte.", con botones Volver al inicio y WhatsApp, sin lluvia. Responde con estado 404 y `noindex` (lo agrega vinext). Las URLs del blog viejo siguen con 301.
 
 ## 2. Contacto
 
