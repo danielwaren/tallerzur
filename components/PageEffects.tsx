@@ -42,10 +42,11 @@ export default function PageEffects() {
    * altura del texto) y al cambiar el tamaño de la ventana.
    */
   useEffect(() => {
-    const stack = document.querySelector<HTMLElement>(".projects-stack");
-    if (!stack) return;
+    // Cada lista (servicios, proyectos) se revisa por separado.
+    const stacks = [...document.querySelectorAll<HTMLElement>(".projects-stack")];
+    if (!stacks.length) return;
     let timer = 0;
-    const check = () => {
+    const check = () => stacks.forEach((stack) => {
       stack.classList.remove("stack-off");
       const panels = [...stack.querySelectorAll<HTMLElement>(".project-panel")];
       if (!panels.length || getComputedStyle(panels[0]).position !== "sticky") return;
@@ -60,7 +61,7 @@ export default function PageEffects() {
         return copy.offsetTop < -1 || copy.offsetTop + copy.offsetHeight > inner.clientHeight + 1;
       });
       stack.classList.toggle("stack-off", overflows);
-    };
+    });
     const onResize = () => { window.clearTimeout(timer); timer = window.setTimeout(check, 150); };
     check();
     void document.fonts?.ready.then(check);
@@ -104,7 +105,9 @@ export default function PageEffects() {
              * - mientras la siguiente se desliza encima, la anterior se
              *   encoge desde arriba y se oscurece, como un mazo.
              */
-            const panels = gsap.utils.toArray<HTMLElement>(".project-panel");
+            gsap.utils.toArray<HTMLElement>(".projects-stack").forEach((stack) => {
+            const panels = gsap.utils.toArray<HTMLElement>(stack.querySelectorAll(".project-panel"));
+            if (!panels.length) return;
             // Punto donde se fija cada tarjeta (bajo el header). Si no hay
             // apilado (pantalla baja), la referencia es el borde superior.
             const stickAt = () => {
@@ -112,13 +115,16 @@ export default function PageEffects() {
               return Number.isFinite(top) && getComputedStyle(panels[0]).position === "sticky" ? top : 0;
             };
             panels.forEach((panel, index) => {
+              // Las capturas de proyectos no llevan parallax: se recortaría
+              // la parte de arriba del sitio, que es la que importa.
+              const isShot = panel.classList.contains("project-work");
               const media = panel.querySelector(".project-media");
               gsap.fromTo(media, { scale: .93, y: 36 }, {
                 scale: 1, y: 0, ease: "none",
                 scrollTrigger: { trigger: panel, start: "top bottom", end: () => `top ${stickAt() + 40}px`, scrub: .5 },
               });
-              gsap.fromTo(panel.querySelector(".project-media img"), { scale: 1.18, yPercent: -5 }, {
-                scale: 1.04, yPercent: 4, ease: "none",
+              gsap.fromTo(panel.querySelector(".project-media img"), isShot ? { scale: 1.08 } : { scale: 1.18, yPercent: -5 }, {
+                ...(isShot ? { scale: 1 } : { scale: 1.04, yPercent: 4 }), ease: "none",
                 scrollTrigger: { trigger: panel, start: "top bottom", end: "bottom top", scrub: .6 },
               });
               gsap.fromTo(panel.querySelectorAll(".project-copy > *"), { y: 28, opacity: 0 }, {
@@ -135,6 +141,7 @@ export default function PageEffects() {
                   opacity: .55, ease: "none", scrollTrigger: { ...behind },
                 });
               }
+            });
             });
 
             gsap.timeline({

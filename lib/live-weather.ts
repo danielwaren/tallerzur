@@ -1,10 +1,9 @@
 /**
  * Clima real de Puerto Cisnes (Open-Meteo, sin API key).
  *
- * Una sola petición compartida: la capa de lluvia y la tarjeta "En vivo" de
- * Nosotros piden lo mismo, así que se reutiliza la promesa mientras tenga
- * menos de `maxAgeMs`. Si la red falla, devuelve `null` y cada uno decide
- * qué mostrar; nunca lanza.
+ * La usa la capa de lluvia para escalar la narrativa según el clima real.
+ * La promesa se reutiliza mientras tenga menos de `maxAgeMs`. Si la red
+ * falla, devuelve `null`; nunca lanza.
  */
 
 export const LIVE_WEATHER_URL =

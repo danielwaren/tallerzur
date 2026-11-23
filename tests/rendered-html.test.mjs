@@ -122,7 +122,7 @@ test("ya no hay cargador bloqueante ni sección Esencia", async () => {
 
 test("navegación a Servicios, Proyectos, Preguntas y Contacto", async () => {
   const html = await renderHome();
-  for (const id of ["servicios", "proyectos", "preguntas", "contacto", "mantencion"]) {
+  for (const id of ["servicios", "proyectos", "preguntas", "contacto"]) {
     assert.match(html, new RegExp(`id="${id}"`), `falta la sección #${id}`);
   }
   const nav = html.match(/<nav[^>]*class="header-nav"[\s\S]*?<\/nav>/i)?.[0] ?? "";
@@ -210,29 +210,26 @@ test("formulario de contacto completo, con honeypot y comunas de Aysén", async 
 
 /* ── Mantención, Nosotros y contacto (rediseño) ─────────────────────── */
 
-test("mantención: una caída paso a paso y el año con la temporada alta", async () => {
+test("sin la sección de mantención ni el clima en vivo de Nosotros", async () => {
   const html = await renderHome();
-  const care = html.match(/<section[^>]*id="mantencion"[\s\S]*?<\/section>/i)?.[0] ?? "";
-  assert.equal((care.match(/class="incident-when"/g) ?? []).length, 4, "4 pasos de la caída");
-  const months = care.match(/<ol class="year-months"[\s\S]*?<\/ol>/)?.[0] ?? "";
-  assert.equal((months.match(/<li/g) ?? []).length, 12);
-  assert.equal((months.match(/class="is-high"/g) ?? []).length, 4, "temporada alta: dic, ene, feb, mar");
-  assert.match(months, /^<ol[^>]*>\s*<li[^>]*>Jul</, "el calendario empieza en julio");
-  assert.doesNotMatch(care, /care-grid/, "las tarjetas genéricas ya no están");
-});
-
-test("nosotros: tarjeta de clima en vivo y principios de trabajo", async () => {
-  const html = await renderHome();
+  assert.doesNotMatch(html, /id="mantencion"/);
+  assert.doesNotMatch(html, /En vivo · Puerto Cisnes/);
   const about = html.match(/<section[^>]*id="nosotros"[\s\S]*?<\/section>/i)?.[0] ?? "";
-  assert.match(about, /En vivo · Puerto Cisnes/);
-  assert.match(about, /aria-live="polite"/);
   assert.equal((about.match(/<li[^>]*data-reveal/g) ?? []).length, 3, "tres principios");
 });
 
-test("contacto: botón de WhatsApp tipo chat con el mensaje ya escrito", async () => {
+test("proyectos: tarjetas apiladas como los servicios", async () => {
   const html = await renderHome();
-  const chat = html.match(/<a[^>]*class="wa-chat"[\s\S]*?<\/a>/i)?.[0] ?? "";
-  assert.match(chat, /href="https:\/\/wa\.me\/56940068228\?text=Hola/);
-  assert.match(chat, /class="wa-bubble"[^>]*>Hola TallerZur/);
+  const work = html.match(/<section[^>]*id="proyectos"[\s\S]*?<\/section>/i)?.[0] ?? "";
+  assert.match(work, /class="projects-stack"/);
+  assert.equal((work.match(/class="project-panel project-work/g) ?? []).length, 3);
+  assert.equal((work.match(/class="project-shade"/g) ?? []).length, 3);
+});
+
+test("contacto: botón de WhatsApp con el mensaje ya escrito", async () => {
+  const html = await renderHome();
+  const button = html.match(/<a[^>]*class="wa-btn"[\s\S]*?<\/a>/i)?.[0] ?? "";
+  assert.match(button, /href="https:\/\/wa\.me\/56940068228\?text=Hola/);
+  assert.match(button, /Escríbenos por WhatsApp/);
   assert.match(html, /<form[^>]*id="contacto-form"/, "el formulario es destino del scroll");
 });

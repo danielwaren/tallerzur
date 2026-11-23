@@ -53,29 +53,17 @@ export default function ContactPanel() {
       <div className="contact-direct">
         <p className="contact-lead">La forma más rápida es WhatsApp. Si prefieres, déjanos tus datos y te escribimos nosotros.</p>
 
-        {/* Botón de WhatsApp como vista previa del chat: muestra el mensaje
-            que ya va escrito (cambia según el servicio elegido). */}
-        <a className="wa-chat" href={whatsappUrl(message)} target="_blank" rel="noopener" data-reveal>
-          <span className="wa-chat-head">
-            <span className="wa-avatar"><WhatsAppIcon size={24} /></span>
-            <span className="wa-chat-id">
-              <strong>TallerZur</strong>
-              <small><i className="wa-online" aria-hidden="true" />responde en menos de 24 h</small>
-            </span>
-            <i className="wa-chat-arrow" aria-hidden="true">↗</i>
+        {/* Botón de WhatsApp: sobrio en reposo; el movimiento está en los
+            detalles (relleno que barre, flechas que se cruzan, punto en línea). */}
+        <a className="wa-btn" href={whatsappUrl(message)} target="_blank" rel="noopener">
+          <span className="wa-btn-icon"><WhatsAppIcon size={20} /></span>
+          <span className="wa-btn-text">
+            <span className="wa-btn-label">Escríbenos por WhatsApp</span>
+            <span className="wa-btn-meta"><i className="wa-online" aria-hidden="true" />Respondemos en menos de 24 h</span>
           </span>
-          <span className="wa-thread" aria-hidden="true">
-            <span className="wa-typing" key={`typing-${servicio ?? "general"}`}><i /><i /><i /></span>
-            <span className="wa-bubble" key={`bubble-${servicio ?? "general"}`}>
-              {message}
-              <small>ahora ✓✓</small>
-            </span>
-          </span>
-          <span className="wa-chat-cta">
-            Abrir WhatsApp<span className="wa-chat-number">{WHATSAPP_DISPLAY}</span>
-          </span>
-          <span className="sr-only">: el mensaje ya va escrito.</span>
+          <span className="wa-btn-arrow" aria-hidden="true"><i>→</i><i>→</i></span>
         </a>
+        <p className="wa-btn-note">{WHATSAPP_DISPLAY} · el mensaje ya va escrito</p>
 
         <ul className="contact-facts">
           <li>Asesoría inicial gratis</li>

@@ -455,7 +455,7 @@ export default function WeatherLayer() {
     };
 
     let liveTimer = 0;
-    // Petición compartida con la tarjeta "En vivo" de Nosotros (lib/live-weather).
+    // Petición cacheada en lib/live-weather.
     const fetchLiveWeather = async () => {
       const current = await getLiveWeather(LIVE_WEATHER_REFRESH_MS - 60_000);
       // Sin red, o Open-Meteo caído: se queda en el factor neutro y la

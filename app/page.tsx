@@ -5,13 +5,12 @@ import SiteHeader from "@/components/SiteHeader";
 import ContactPanel from "@/components/ContactPanel";
 import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 import PageEffects from "@/components/PageEffects";
-import LiveWeather from "@/components/LiveWeather";
 import { media } from "@/lib/media";
-import { SERVICES, MAINTENANCE, TRUST, ABOUT } from "@/lib/services";
+import { SERVICES, TRUST, ABOUT } from "@/lib/services";
 import { PROJECTS } from "@/lib/projects";
 import { FAQ } from "@/lib/faq";
 import { COORDS, professionalServiceJsonLd, faqJsonLd } from "@/lib/seo";
-import { CONTACT_EMAIL, whatsappTextFor, whatsappUrl } from "@/lib/contact";
+import { CONTACT_EMAIL, whatsappUrl } from "@/lib/contact";
 
 /**
  * Página de servidor. El contenido (servicios, proyectos, preguntas…) llega
@@ -20,9 +19,6 @@ import { CONTACT_EMAIL, whatsappTextFor, whatsappUrl } from "@/lib/contact";
  * el header/menú, el panel de contacto, el WhatsApp flotante, la lluvia y
  * los efectos de scroll.
  */
-/** Orden del calendario: de julio a junio, la temporada alta queda al centro. */
-const SEASON_ORDER = [6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5];
-
 export default function Home() {
   return (
     <>
@@ -116,96 +112,41 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="mantencion" className="care" aria-labelledby="mantencion-title">
-          <div className="care-head" data-reveal>
-            <p className="section-label">servicio estrella · mantención garantizada</p>
-            <h2 id="mantencion-title">{MAINTENANCE.heading}</h2>
-            <p className="care-lead">{MAINTENANCE.lead}</p>
-          </div>
-          <div className="care-body">
-            <div className="care-incident" data-reveal>
-              <p className="care-kicker">{MAINTENANCE.incidentTitle}</p>
-              <ol className="incident">
-                {MAINTENANCE.incident.map((step, index) => (
-                  <li key={step.when} style={{ "--step": index } as CSSProperties}>
-                    <span className="incident-when">{step.when}</span>
-                    <strong>{step.title}</strong>
-                    <p>{step.text}</p>
-                  </li>
-                ))}
-              </ol>
-            </div>
-            <div className="care-side">
-              {/* Ilustrativo: el "pulso" de un sitio monitoreado. */}
-              <div className="monitor" data-reveal aria-hidden="true">
-                <p className="monitor-status"><i />{MAINTENANCE.monitor}</p>
-                <svg className="monitor-pulse" viewBox="0 0 320 64" preserveAspectRatio="none" focusable="false">
-                  <path className="monitor-base" d="M0 32H320" />
-                  <path className="monitor-beat" d="M0 32H96L106 32L114 14L124 54L134 6L144 46L152 32H210L216 32L222 22L230 40L236 32H320" />
-                </svg>
-                <p className="monitor-caption">Si el pulso se corta, la alerta nos llega a nosotros.</p>
-              </div>
-              <div className="year" data-reveal>
-                <p className="care-kicker">{MAINTENANCE.yearTitle}</p>
-                {/* Empieza en julio para que la temporada alta (dic–mar) quede seguida. */}
-                <ol className="year-months" aria-label="Meses del año. Temporada alta de diciembre a marzo.">
-                  {SEASON_ORDER.map((month, position) => {
-                    const high = (MAINTENANCE.highSeason as readonly number[]).includes(month);
-                    return (
-                      <li key={month} className={high ? "is-high" : undefined} style={{ "--m": position } as CSSProperties}>
-                        {MAINTENANCE.months[month]}
-                      </li>
-                    );
-                  })}
-                </ol>
-                <dl className="year-legend">
-                  <div className="is-high">
-                    <dt>{MAINTENANCE.seasons.high.label}</dt>
-                    <dd><strong>{MAINTENANCE.seasons.high.value}</strong> {MAINTENANCE.seasons.high.note}</dd>
-                  </div>
-                  <div>
-                    <dt>{MAINTENANCE.seasons.low.label}</dt>
-                    <dd><strong>{MAINTENANCE.seasons.low.value}</strong> {MAINTENANCE.seasons.low.note}</dd>
-                  </div>
-                </dl>
-              </div>
-            </div>
-          </div>
-          <div className="care-actions" data-reveal>
-            <a className="btn btn-light" href="/?servicio=mantencion#contacto" data-servicio="mantencion">
-              {MAINTENANCE.cta}<i aria-hidden="true">↗</i>
-            </a>
-            <a className="btn btn-ghost" href={whatsappUrl(whatsappTextFor("mantencion"))} target="_blank" rel="noopener">
-              Preguntar por WhatsApp
-            </a>
-            <p className="care-note">{MAINTENANCE.note}</p>
-          </div>
-        </section>
-
         <section id="proyectos" className="work" aria-labelledby="proyectos-title">
           <div className="work-intro" data-reveal>
             <p className="section-label">proyectos</p>
             <h2 id="proyectos-title">Esto no<br />es un mockup.</h2>
             <p>Sitios reales, en producción. Entra y pruébalos desde tu celular.</p>
           </div>
-          <div className="work-grid">
+          <div className="projects-stack">
             {PROJECTS.map((project, index) => (
-              <article className="work-card" key={project.slug} data-reveal style={{ transitionDelay: `${index * 90}ms` }}>
-                <a className="work-shot" href={project.url} target="_blank" rel="noopener" tabIndex={-1} aria-hidden="true">
-                  <picture>
-                    <source type="image/avif" srcSet={project.image.avif} />
-                    <img src={project.image.webp} alt="" width={project.image.width} height={project.image.height} loading="lazy" decoding="async" />
-                  </picture>
-                </a>
-                <p className="work-meta"><span>{project.year}</span><span>{project.rubro}</span></p>
-                <h3>{project.name}</h3>
-                <p className="work-problem"><strong>El desafío:</strong> {project.problema}</p>
-                <ul className="work-stack" aria-label="Tecnologías">
-                  {project.stack.map((tag) => <li key={tag}>{tag}</li>)}
-                </ul>
-                <a className="text-link" href={project.url} target="_blank" rel="noopener">
-                  Ver sitio en vivo<span className="sr-only"> ({project.name}, se abre en otra pestaña)</span><i aria-hidden="true">↗</i>
-                </a>
+              <article
+                className={`project-panel project-work project-work-${index % 3}`}
+                key={project.slug}
+                aria-labelledby={`proyecto-${project.slug}`}
+                style={{ "--i": index } as CSSProperties}
+              >
+                <div className="project-inner">
+                  <a className="project-media is-shot" href={project.url} target="_blank" rel="noopener" tabIndex={-1} aria-hidden="true">
+                    <picture>
+                      <source type="image/avif" srcSet={project.image.avif} />
+                      <img src={project.image.webp} alt="" width={project.image.width} height={project.image.height} loading="lazy" decoding="async" />
+                    </picture>
+                    <span className="image-index">{String(index + 1).padStart(2, "0")} / {String(PROJECTS.length).padStart(2, "0")}</span>
+                  </a>
+                  <div className="project-copy">
+                    <div className="project-heading"><span>{project.year}</span><p>{project.rubro}</p></div>
+                    <h3 id={`proyecto-${project.slug}`}>{project.name}</h3>
+                    <p className="work-problem"><strong>El desafío:</strong> {project.problema}</p>
+                    <ul className="work-stack" aria-label="Tecnologías">
+                      {project.stack.map((tag) => <li key={tag}>{tag}</li>)}
+                    </ul>
+                    <a className="text-link" href={project.url} target="_blank" rel="noopener">
+                      Ver sitio en vivo<span className="sr-only"> ({project.name}, se abre en otra pestaña)</span><i aria-hidden="true">↗</i>
+                    </a>
+                  </div>
+                  <div className="project-shade" aria-hidden="true" />
+                </div>
               </article>
             ))}
           </div>
@@ -226,17 +167,16 @@ export default function Home() {
                 </h2>
                 <p>{ABOUT.intro}</p>
               </div>
-              <LiveWeather />
+              <ul className="principles">
+                {ABOUT.principles.map((item, index) => (
+                  <li key={item.title} data-reveal style={{ transitionDelay: `${index * 90}ms` }}>
+                    <small>{String(index + 1).padStart(2, "0")}</small>
+                    <strong>{item.title}</strong>
+                    <span>{item.text}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="principles">
-              {ABOUT.principles.map((item, index) => (
-                <li key={item.title} data-reveal style={{ transitionDelay: `${index * 90}ms` }}>
-                  <small>{String(index + 1).padStart(2, "0")}</small>
-                  <strong>{item.title}</strong>
-                  <span>{item.text}</span>
-                </li>
-              ))}
-            </ul>
             <p className="company-coordinate"><span>{COORDS.label.lat}</span><i /><span>{COORDS.label.lon}</span></p>
           </div>
         </section>

@@ -13,7 +13,7 @@ Fraunces/Inter, el tono oscuro y los paneles apilados. Rama
 |---|---|
 | Compilación | ✅ `npm run build:local` limpio |
 | Tipos | ✅ `tsc --noEmit`: los mismos 3 errores previos del andamiaje D1 (`db/index.ts`, `worker/index.ts`), ninguno nuevo |
-| Tests | ✅ **79/79** (`npm run test:unit`) |
+| Tests | ✅ **77/77** (`npm run test:unit`) |
 | Lighthouse móvil (build real, con compresión) | Accesibilidad **100** · Buenas prácticas **100** · SEO **100** · Performance **93–95** con CPU calibrada / **74–80** con el ×4 por defecto (ver §4) |
 | Revisado en el navegador | ✅ 390 px y escritorio (1440 px), en dev y en el build de producción |
 
@@ -59,25 +59,20 @@ Se recuperó y modernizó el efecto en que las tarjetas se superponen al hacer s
 - **Red de seguridad:** si en alguna pantalla una tarjeta no cabe (por ejemplo, iPhone SE 375×667), el apilado se apaga solo y las tarjetas fluyen una tras otra. Nunca tapan un CTA.
 - **Comprobado** con hit-test de los tres CTA en 330×640, 375×667, 390×844, 1366×700 y 1440×900. Con `prefers-reduced-motion` no hay apilado.
 
-## 1c. Rediseño: mantención, Nosotros y contacto
+## 1c. Ajustes de la última revisión
 
-- **Mantención** (ya no son 4 tarjetas genéricas):
-  - *Una caída, con mantención*: 4 pasos en una línea de tiempo que va de rojo (el sitio cae) a verde (resuelto y explicado por WhatsApp). La línea se dibuja al hacer scroll.
-  - *Pulso del monitor*: línea animada con "tusitio.cl · en línea". Es ilustrativa: no muestra datos reales.
-  - *Tu año en Aysén*: calendario de julio a junio con diciembre–marzo destacados (menos de 4 h hábiles) frente al resto del año (menos de 24 h).
-- **Nosotros**:
-  - Frase grande: "Escribimos código a 44° sur, con la lluvia en la ventana."
-  - Tarjeta **En vivo · Puerto Cisnes** con temperatura, estado del cielo, viento y hora local reales de Open-Meteo. Si está lloviendo, la tarjeta lo dice y muestra lluvia.
-  - Tres principios de trabajo, sin cifras.
-  - La consulta de clima se comparte con la capa de lluvia (`lib/live-weather.ts`), así que es una sola petición.
-- **Formulario compacto**:
-  - Etiquetas cortas, campos en pares también en el celular, mensaje de 3 líneas.
-  - Mide 549 px y cabe entero en una pantalla de 390×844 (también en un iPhone SE).
-  - Los CTA de servicio llevan la pantalla directo al formulario, no al título de la sección.
-- **WhatsApp tipo chat**:
-  - Ícono con aros que laten, "responde en menos de 24 h", puntos de "escribiendo…" y luego la burbuja con el mensaje que ya va escrito (cambia según el servicio).
-  - Al pasar el cursor, un brillo cruza la tarjeta.
-  - El botón de WhatsApp que aparece si falla el envío usa el mismo estilo.
+- **Sección "Si tu sitio se cae en enero…": eliminada por completo.** La mantención sigue presentada en la tarjeta 02 de servicios (con el sello "Servicio estrella"), en la FAQ y en el formulario. La redirección del artículo viejo sobre mantenimiento ahora apunta a `/#servicios`.
+- **Nosotros sin el clima en vivo:** queda la frase grande a la izquierda y los tres principios de trabajo a la derecha. La lluvia de fondo sigue usando el clima real (`lib/live-weather.ts`).
+- **Apilado también en escritorio.** Antes solo se activaba con 700 px de alto o más, y además se apagaba si el sistema pedía menos movimiento. En laptops (ventana de ~650 px) las tarjetas salían una tras otra. Ahora:
+  - se activa desde 560 px de alto;
+  - la tarjeta se compacta en pantallas bajas;
+  - el apilado se mantiene con reduced-motion (es parte del scroll; las animaciones GSAP sí se apagan).
+  - Comprobado con hit-test de los 6 CTA en 1280×600, 1366×657, 1920×969, 390×844 y 375×667. En iPhone SE los servicios pasan a flujo porque no caben enteros.
+- **Proyectos como tarjetas apiladas**, con la misma mecánica y animación que los servicios. Las capturas no llevan parallax, para que no se recorte la parte de arriba del sitio.
+- **Botón de WhatsApp minimalista:** píldora oscura con ícono, "Escríbenos por WhatsApp" y "Respondemos en menos de 24 h".
+  - Al pasar el cursor, un relleno verde barre de izquierda a derecha, el ícono gira apenas y las flechas se cruzan dentro de un círculo que se vuelve claro.
+  - En reposo solo late el punto "en línea" y cada tanto cruza un brillo sutil.
+  - Solo se animan transform y opacity.
 
 ## 2. Contacto
 
@@ -101,7 +96,7 @@ Se recuperó y modernizó el efecto en que las tarjetas se superponen al hacer s
 - **Redirecciones 301** (en `worker/index.ts`, porque vinext convierte `permanent` en 308 en producción):
   - `/blog` → `/`
   - `cuanto-cuesta-pagina-web-aysen` → `/#preguntas`
-  - `por-que-tu-sitio-necesita-mantenimiento` → `/#mantencion`
+  - `por-que-tu-sitio-necesita-mantenimiento` → `/#servicios`
   - `5-herramientas-web-hostal-restaurante` → `/#servicios`
   - Además, los **otros 3 artículos** que tenía el blog viejo y que no estaban en la lista: `seo-local-como-aparecer-en-google` → `#servicios`, `velocidad-web-patagonia` → `#preguntas` y `whatsapp-business-vs-pagina-web` → `#preguntas`.
   - Cualquier otra URL bajo `/blog` va al inicio.

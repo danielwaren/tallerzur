@@ -7,7 +7,6 @@ import { whatsappUrl } from "@/lib/contact";
 const sectionLinks = [
   { id: "inicio", label: "Inicio" },
   { id: "servicios", label: "Servicios" },
-  { id: "mantencion", label: "Mantención" },
   { id: "proyectos", label: "Proyectos" },
   { id: "nosotros", label: "Nosotros" },
   { id: "preguntas", label: "Preguntas" },

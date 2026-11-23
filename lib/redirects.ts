@@ -6,11 +6,11 @@
  * trata 308 y 301 igual, pero se pidió 301 explícito y así queda.
  *
  * Cada artículo del blog viejo apunta a la sección más cercana del sitio
- * nuevo. Cualquier otra URL bajo /blog va al inicio: mejor que un 404.
+ * nuevo (la mantención vive en la tarjeta 02 de servicios). Cualquier otra URL bajo /blog va al inicio: mejor que un 404.
  */
 export const BLOG_REDIRECTS: Record<string, string> = {
   "cuanto-cuesta-pagina-web-aysen": "/#preguntas",
-  "por-que-tu-sitio-necesita-mantenimiento": "/#mantencion",
+  "por-que-tu-sitio-necesita-mantenimiento": "/#servicios",
   "5-herramientas-web-hostal-restaurante": "/#servicios",
   "seo-local-como-aparecer-en-google": "/#servicios",
   "velocidad-web-patagonia": "/#preguntas",

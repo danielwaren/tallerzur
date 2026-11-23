@@ -11,7 +11,7 @@ const OLD_URLS = {
   "/blog": "/",
   "/blog/": "/",
   "/blog/cuanto-cuesta-pagina-web-aysen/": "/#preguntas",
-  "/blog/por-que-tu-sitio-necesita-mantenimiento/": "/#mantencion",
+  "/blog/por-que-tu-sitio-necesita-mantenimiento/": "/#servicios",
   "/blog/5-herramientas-web-hostal-restaurante/": "/#servicios",
   "/blog/seo-local-como-aparecer-en-google": "/#servicios",
   "/blog/velocidad-web-patagonia/": "/#preguntas",

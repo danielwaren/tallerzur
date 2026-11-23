@@ -75,38 +75,6 @@ export const SERVICES: Service[] = [
   },
 ];
 
-/**
- * Mantención garantizada: el servicio de los correos de prospección.
- *
- * En vez de cuatro tarjetas de "beneficios", dos cosas que un dueño de
- * hostal reconoce: cómo se ve una caída cuando hay alguien cuidando el sitio
- * (paso a paso, sin cifras inventadas) y su propio año, con la temporada
- * alta marcada, que es cuando más duele un sitio caído.
- */
-export const MAINTENANCE = {
-  heading: "Si tu sitio se cae en enero, no esperas a marzo.",
-  lead:
-    "La temporada alta en Aysén dura pocos meses y no perdona un sitio caído. La mantención existe para que eso lo resolvamos nosotros, rápido, mientras tú atiendes a tus pasajeros.",
-  incidentTitle: "Una caída, con mantención",
-  incident: [
-    { when: "Minuto 0", title: "Tu sitio deja de responder.", text: "Un servidor, un plugin, un certificado vencido. Da lo mismo la causa: alguien estaba intentando reservar." },
-    { when: "Minutos después", title: "El monitor nos avisa a nosotros.", text: "No te enteras por un pasajero molesto ni por una reseña en Google." },
-    { when: "< 4 h hábiles", title: "Lo reparamos o volvemos al último respaldo.", text: "Ese es el plazo en temporada alta. El resto del año respondemos en menos de 24 horas." },
-    { when: "Al cerrar", title: "Te contamos qué pasó, por WhatsApp.", text: "En simple, sin tecnicismos y sin tickets." },
-  ],
-  yearTitle: "Tu año en Aysén",
-  months: ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"],
-  /** Índices de los meses de temporada alta: diciembre a marzo. */
-  highSeason: [0, 1, 2, 11],
-  seasons: {
-    high: { label: "Temporada alta", value: "< 4 h hábiles", note: "si el sitio se cae" },
-    low: { label: "Resto del año", value: "< 24 h", note: "para cualquier problema o cambio" },
-  },
-  monitor: "tusitio.cl · en línea",
-  note: "Plan mensual, cotizado según el tamaño de tu sitio. Sin letra chica.",
-  cta: "Quiero mantención para mi sitio",
-} as const;
-
 export const TRUST = [
   { title: "Hecho en Puerto Cisnes", text: "Conocemos la temporada, la señal y a quien te busca." },
   { title: "Soporte por WhatsApp", text: "Hablas directo con quien hizo tu sitio." },
