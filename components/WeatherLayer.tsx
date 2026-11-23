@@ -9,6 +9,7 @@ import {
   CHAPTERS, resolveWeather, chapterIndexFromScroll, applyLiveFactor,
   liveWeatherFactor, NEUTRAL_LIVE_FACTOR, type WeatherState, type LiveFactor,
 } from "@/lib/weather-states";
+import { afterLoadIdle } from "@/lib/idle";
 
 // Mismas coordenadas que usa el widget de clima de tallerzur.cl.
 const LIVE_WEATHER_URL =
@@ -55,6 +56,7 @@ export default function WeatherLayer() {
     const finePointer = window.matchMedia("(pointer: fine)").matches;
 
     let width = 0, height = 0;
+    let quality = 1;
     let field: Field = createField(1, 1);
     let drops: Drop[] = [];
     let motes: Mote[] = [];
@@ -112,7 +114,9 @@ export default function WeatherLayer() {
     });
 
     const resize = () => {
-      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      // En pantallas táctiles (celulares) la lluvia no necesita retina: con
+      // 1,25× se ve igual y se pintan ~2,5 veces menos píxeles por frame.
+      const ratio = Math.min(window.devicePixelRatio || 1, finePointer ? 2 : 1.25);
       width = window.innerWidth;
       height = window.innerHeight;
       canvas.width = width * ratio;
@@ -121,8 +125,8 @@ export default function WeatherLayer() {
       canvas.style.height = `${height}px`;
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       field = createField(width, height);
-      drops = Array.from({ length: Math.round(Math.min(340, width / 4.4)) }, () => newDrop(true));
-      motes = Array.from({ length: 190 }, () => ({
+      drops = Array.from({ length: Math.round(Math.min(340, width / 4.4) * quality) }, () => newDrop(true));
+      motes = Array.from({ length: Math.round(190 * quality) }, () => ({
         x: Math.random() * width, y: Math.random() * height,
         d: 0.25 + Math.random() * 0.75, s: 0.45 + Math.random() * 1.25,
       }));
@@ -131,8 +135,8 @@ export default function WeatherLayer() {
         r: height * (0.35 + Math.random() * 0.4),
         vx: (0.4 + Math.random() * 0.7) * (i % 2 ? 1 : -1), phase: Math.random() * 6.28,
       }));
-      beads = Array.from({ length: 70 }, newBead);
-      drips = Array.from({ length: 60 }, () => ({
+      beads = Array.from({ length: Math.round(70 * quality) }, newBead);
+      drips = Array.from({ length: Math.round(60 * quality) }, () => ({
         x: Math.random() * width, y: -Math.random() * height, vy: 0,
         len: 5 + Math.random() * 9,
       }));
@@ -392,8 +396,25 @@ export default function WeatherLayer() {
 
     let frame = 0;
     let last = performance.now();
+    // Calidad adaptativa: si los cuadros tardan demasiado (celular de gama
+    // baja, sin GPU), se recortan partículas y después la niebla. Nunca al
+    // revés: una vez que bajó, no vuelve a subir y no oscila.
+    let frameCost = 0;
+    let frameSamples = 0;
+    let fogEnabled = true;
+    const degrade = () => {
+      quality *= 0.6;
+      drops.length = Math.round(drops.length * 0.6);
+      motes.length = Math.round(motes.length * 0.5);
+      beads.length = Math.round(beads.length * 0.6);
+      drips.length = Math.round(drips.length * 0.6);
+      if (quality < 0.5) fogEnabled = false;
+      frameSamples = 0;
+      frameCost = 0;
+    };
 
     const draw = (now: number) => {
+      const started = performance.now();
       const dt = Math.min(0.05, Math.max(0.004, (now - last) / 1000));
       last = now;
       const t = now / 1000;
@@ -415,13 +436,16 @@ export default function WeatherLayer() {
       stepField(field, dt);
 
       ctx.clearRect(0, 0, width, height);
-      drawFog(dt, t);
+      if (fogEnabled) drawFog(dt, t);
       drawRipples(t);
       drawAir(windX, dt);
       drawRain(windX, dt);
       drawDrip(windX, dt);
       drawCondensation(dt);
       drawCursor(dt);
+
+      frameCost = frameCost * 0.9 + (performance.now() - started) * 0.1;
+      if (++frameSamples > 40 && frameCost > 8 && quality > 0.3) degrade();
       frame = window.requestAnimationFrame(draw);
     };
 
@@ -448,19 +472,29 @@ export default function WeatherLayer() {
       }
     };
 
-    resize();
-    window.addEventListener("resize", resize);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    if (finePointer) {
-      window.addEventListener("pointermove", move, { passive: true });
-      document.documentElement.addEventListener("pointerleave", leave);
-      document.body.classList.add("has-custom-cursor");
-    }
-    frame = window.requestAnimationFrame(draw);
-    void fetchLiveWeather();
-    liveTimer = window.setInterval(fetchLiveWeather, LIVE_WEATHER_REFRESH_MS);
+    // La lluvia es decorado: arranca cuando la página ya cargó y el hilo
+    // principal está libre. Antes empezaba al montar y competía con la
+    // hidratación (Lighthouse móvil lo contaba como tiempo de bloqueo).
+    let started = false;
+    const start = () => {
+      started = true;
+      resize();
+      window.addEventListener("resize", resize);
+      window.addEventListener("scroll", onScroll, { passive: true });
+      if (finePointer) {
+        window.addEventListener("pointermove", move, { passive: true });
+        document.documentElement.addEventListener("pointerleave", leave);
+        document.body.classList.add("has-custom-cursor");
+      }
+      frame = window.requestAnimationFrame(draw);
+      void fetchLiveWeather();
+      liveTimer = window.setInterval(fetchLiveWeather, LIVE_WEATHER_REFRESH_MS);
+    };
+    const cancelStart = afterLoadIdle(start);
 
     return () => {
+      cancelStart();
+      if (!started) return;
       window.cancelAnimationFrame(frame);
       window.clearInterval(liveTimer);
       window.removeEventListener("resize", resize);

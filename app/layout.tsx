@@ -51,7 +51,6 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     images: [{ url: OG_IMAGE.url, alt: OG_IMAGE.alt }],
   },
-  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
   robots: { index: true, follow: true },
 };
 
@@ -67,6 +66,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es-CL">
+      {/* Relativo a propósito: con `metadataBase` el ícono salía como
+          https://tallerzur.cl/favicon.svg, que no existe fuera de producción. */}
+      <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+      </head>
       <body className="antialiased">{children}</body>
     </html>
   );

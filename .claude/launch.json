@@ -8,6 +8,12 @@
       "port": 4331
     },
     {
+      "name": "cisnes-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "preview", "--", "--port", "4340", "--strictPort"],
+      "port": 4340
+    },
+    {
       "name": "lab-lluvia",
       "runtimeExecutable": "node",
       "runtimeArgs": ["lab/server.mjs"],

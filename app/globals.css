@@ -101,7 +101,9 @@ body.has-custom-cursor .arrival :is(input,textarea){cursor:text}
 .hero-shade,.hero-dark{position:absolute;inset:0}
 .hero-shade{background:linear-gradient(180deg,rgba(2,4,2,.5),rgba(3,5,3,.18) 36%,rgba(3,4,3,.88))}
 .hero-dark{background:#070906;opacity:0}
-.mist{position:absolute;width:70vw;height:30vh;border-radius:50%;background:rgba(220,226,216,.1);filter:blur(80px)}
+/* Niebla con degradado radial en vez de `filter:blur(80px)`: se ve igual y
+   no obliga a rasterizar un desenfoque enorme en el primer pintado. */
+.mist{position:absolute;width:90vw;height:46vh;border-radius:50%;background:radial-gradient(closest-side,rgba(220,226,216,.11),rgba(220,226,216,.05) 55%,transparent);will-change:transform}
 .mist-one{left:-15vw;top:35%;animation:fog 14s ease-in-out infinite alternate}
 .mist-two{right:-20vw;top:18%;opacity:.4;animation:fog 18s ease-in-out infinite alternate-reverse}
 @keyframes fog{to{transform:translateX(16vw) scale(1.12)}}
@@ -143,7 +145,11 @@ body.has-custom-cursor .arrival :is(input,textarea){cursor:text}
 .projects-heading h2{margin:0;font:400 clamp(3.4rem,7vw,7.4rem)/.9 var(--serif);letter-spacing:-.055em}
 .projects-heading>p:last-child{margin:1rem 0 0;font:italic 1.05rem/1.5 var(--serif)}
 .projects-stack{position:relative}
-.project-panel{position:sticky;top:0;height:100svh;padding:1.35rem;background:#c8cbc1;overflow:hidden}
+/* El apilado sticky solo cuando la pantalla es lo bastante alta para que
+   todo el panel quepa: si no, el panel siguiente tapaba el CTA del anterior
+   (visto a 800×600). Con poca altura, los paneles fluyen uno tras otro. */
+.project-panel{position:relative;padding:1.35rem;background:#c8cbc1}
+@media(min-width:761px) and (min-height:760px){.project-panel{position:sticky;top:0;height:100svh;overflow:hidden}}
 .project-inner{position:relative;width:100%;height:100%;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(22rem,.8fr);align-items:end;gap:clamp(2rem,5vw,6rem);padding:clamp(1rem,2vw,2rem);border-radius:2.2rem;overflow:hidden;transform-origin:center top;box-shadow:0 30px 80px rgba(14,20,16,.2),0 7px 24px rgba(14,20,16,.13)}
 .project-forest .project-inner{background:#aeb4a8}
 .project-water .project-inner{background:#aeb7b6}

@@ -30,7 +30,7 @@ async function variants(input, name, widths, { q = 62, aq = 48 } = {}) {
 }
 
 await variants(`${PUB}/cisnes-hero.webp`, "hero", [768, 1536]);
-await variants(`${PUB}/cisnes-forest.webp`, "forest", [720, 1122]);
+await variants(`${PUB}/cisnes-forest.webp`, "forest", [720, 960, 1122], { q: 55, aq: 38 });
 await variants(`${PUB}/cisnes-water.webp`, "water", [768, 1536]);
 
 for (const n of ["nutme", "subelab", "hostalmonchito"]) {

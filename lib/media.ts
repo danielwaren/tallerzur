@@ -37,7 +37,7 @@ const responsive = (name: string, widths: number[], width: number, height: numbe
 export const media = {
   heroFiordo: responsive("hero", [768, 1536], 1536, 960,
     "Bosque siempreverde junto a un fiordo en Puerto Cisnes al amanecer"),
-  bosqueHelechos: responsive("forest", [720, 1122], 1122, 1402,
+  bosqueHelechos: responsive("forest", [720, 960, 1122], 1122, 1402,
     "Helechos y musgo húmedos en el sotobosque de Aysén"),
   aguaCanal: responsive("water", [768, 1536], 1536, 1024,
     "Agua calma del canal Puyuhuapi rodeada de bosque siempreverde"),
