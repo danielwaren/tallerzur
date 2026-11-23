@@ -6,8 +6,14 @@ import {
   type Field, type Vec,
 } from "@/lib/wind-field";
 import {
-  CHAPTERS, resolveWeather, chapterIndexFromScroll, type WeatherState,
+  CHAPTERS, resolveWeather, chapterIndexFromScroll, applyLiveFactor,
+  liveWeatherFactor, NEUTRAL_LIVE_FACTOR, type WeatherState, type LiveFactor,
 } from "@/lib/weather-states";
+
+// Mismas coordenadas que usa el widget de clima de tallerzur.cl.
+const LIVE_WEATHER_URL =
+  "https://api.open-meteo.com/v1/forecast?latitude=-44.7427&longitude=-72.6926&current=weather_code&timezone=auto";
+const LIVE_WEATHER_REFRESH_MS = 15 * 60 * 1000;
 
 const FALL = 1180;        // px/s de caída de referencia
 const EXPOSURE = 0.034;   // "obturador": largo del trazo = |v| · t
@@ -30,6 +36,11 @@ type Drip = { x: number; y: number; vy: number; len: number };
  * Física de la lluvia (frente al motor anterior): trazo colineal con la
  * velocidad y de largo |v|·exposición; ángulo común entre capas; huella del
  * cursor con memoria; todo por delta-time; 3 stroke() por frame.
+ *
+ * El clima real de Puerto Cisnes (Open-Meteo, sin API key, misma coordenada
+ * que usa el widget de tallerzur.cl) escala la narrativa por capítulo cada
+ * 15 minutos: si allá está lloviendo, acá llueve más. Si no hay red, se queda
+ * en el factor neutro — nunca rompe ni bloquea la animación por scroll.
  */
 export default function WeatherLayer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -58,6 +69,10 @@ export default function WeatherLayer() {
     let weather: WeatherState = { ...CHAPTERS[0].state };
     let target: WeatherState = { ...CHAPTERS[0].state };
     let centers: number[] = [];
+    // Clima real de Puerto Cisnes: escala la narrativa, no la reemplaza. Si
+    // la API no responde, se queda en neutro y el sitio se ve exactamente
+    // igual que sin esto.
+    let live: LiveFactor = NEUTRAL_LIVE_FACTOR;
 
     const measure = () => {
       centers = CHAPTERS.map(({ id }) => {
@@ -69,7 +84,7 @@ export default function WeatherLayer() {
     };
     const updateTarget = () => {
       const index = chapterIndexFromScroll(window.scrollY + height / 2, centers);
-      target = resolveWeather(index);
+      target = applyLiveFactor(resolveWeather(index), live);
     };
 
     const pointer = { x: -999, y: -999, px: -999, py: -999, vx: 0, vy: 0, active: false };
@@ -417,6 +432,22 @@ export default function WeatherLayer() {
       window.requestAnimationFrame(() => { updateTarget(); scrollTick = false; });
     };
 
+    let liveTimer = 0;
+    const fetchLiveWeather = async () => {
+      try {
+        const res = await fetch(LIVE_WEATHER_URL, { cache: "no-store" });
+        const data = await res.json();
+        const code = data?.current?.weather_code;
+        if (typeof code === "number") {
+          live = liveWeatherFactor(code);
+          updateTarget();
+        }
+      } catch {
+        // Sin red, o Open-Meteo caído: se queda en el factor neutro y la
+        // narrativa por scroll sigue funcionando igual que siempre.
+      }
+    };
+
     resize();
     window.addEventListener("resize", resize);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -426,9 +457,12 @@ export default function WeatherLayer() {
       document.body.classList.add("has-custom-cursor");
     }
     frame = window.requestAnimationFrame(draw);
+    void fetchLiveWeather();
+    liveTimer = window.setInterval(fetchLiveWeather, LIVE_WEATHER_REFRESH_MS);
 
     return () => {
       window.cancelAnimationFrame(frame);
+      window.clearInterval(liveTimer);
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", onScroll);
       if (finePointer) {

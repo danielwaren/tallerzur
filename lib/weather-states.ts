@@ -102,3 +102,38 @@ export function chapterIndexFromScroll(viewportCenterY: number, centers: number[
   }
   return last;
 }
+
+/**
+ * El clima real de Puerto Cisnes, multiplicado sobre la narrativa.
+ *
+ * No sustituye la historia por capítulo — el canal sigue en calma en
+ * "territorio" aunque afuera esté lloviendo a cántaros — solo la intensifica o
+ * la atenúa. `code` es el código WMO que devuelve Open-Meteo
+ * (`weather_code`), la misma API que ya usa tallerzur.cl para su widget de
+ * clima. Factor neutro (1,1,1) si no hay dato: el sitio se ve exactamente
+ * como sin esto.
+ */
+export type LiveFactor = { rain: number; mist: number; wind: number };
+
+export const NEUTRAL_LIVE_FACTOR: LiveFactor = { rain: 1, mist: 1, wind: 1 };
+
+export function liveWeatherFactor(code: number): LiveFactor {
+  if (code === 0) return { rain: 0.35, mist: 0.4, wind: 0.6 };   // despejado
+  if (code <= 2) return { rain: 0.55, mist: 0.55, wind: 0.75 };  // parcial
+  if (code === 3) return { rain: 0.75, mist: 0.85, wind: 0.85 }; // nublado
+  if (code <= 48) return { rain: 0.7, mist: 1.35, wind: 0.7 };   // niebla real
+  if (code <= 67) return { rain: 1.25, mist: 1.1, wind: 1.05 };  // lluvia real
+  if (code <= 82) return { rain: 1.4, mist: 1.15, wind: 1.2 };   // chubascos
+  if (code <= 86) return { rain: 0.9, mist: 1.2, wind: 1.0 };    // nieve
+  return { rain: 1.5, mist: 1.2, wind: 1.5 };                    // tormenta
+}
+
+/** Aplica el factor sobre un estado ya resuelto, recortado a su rango 0..1. */
+export function applyLiveFactor(state: WeatherState, factor: LiveFactor): WeatherState {
+  return {
+    ...state,
+    rain: Math.min(1, state.rain * factor.rain),
+    mist: Math.min(1, state.mist * factor.mist),
+    wind: Math.min(1, state.wind * factor.wind),
+  };
+}

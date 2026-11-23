@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   CHAPTERS, blendStates, resolveWeather, chapterIndexFromScroll,
+  liveWeatherFactor, applyLiveFactor, NEUTRAL_LIVE_FACTOR,
 } from "../lib/weather-states.ts";
 
 test("hay seis capítulos en orden vertical", () => {
@@ -77,4 +78,35 @@ test("chapterIndexFromScroll no se rompe con casos límite", () => {
   // centros pegados (secciones de altura cero) no dividen por cero
   const r = chapterIndexFromScroll(500, [500, 500, 1500]);
   assert.ok(Number.isFinite(r));
+});
+
+test("el factor neutro no cambia nada", () => {
+  const state = CHAPTERS[0].state;
+  assert.deepEqual(applyLiveFactor(state, NEUTRAL_LIVE_FACTOR), state);
+});
+
+test("liveWeatherFactor: lluvia real sube la lluvia, cielo despejado la apaga", () => {
+  const clear = liveWeatherFactor(0);
+  const rain = liveWeatherFactor(61);
+  const storm = liveWeatherFactor(95);
+  assert.ok(clear.rain < 1, "cielo despejado atenúa la lluvia guionizada");
+  assert.ok(rain.rain > 1, "lluvia real la intensifica");
+  assert.ok(storm.rain > rain.rain, "una tormenta pesa más que lluvia simple");
+});
+
+test("applyLiveFactor nunca saca rain o mist de su rango 0..1", () => {
+  const saturated = { ...CHAPTERS[0].state, rain: 0.9, mist: 0.9 };
+  const out = applyLiveFactor(saturated, liveWeatherFactor(95));
+  assert.ok(out.rain <= 1 && out.rain >= 0);
+  assert.ok(out.mist <= 1 && out.mist >= 0);
+});
+
+test("applyLiveFactor no toca la narrativa por capítulo, solo la escala", () => {
+  // El canal sigue en calma en "territorio" aunque el factor suba: `ripples`
+  // no es uno de los campos que el clima real modula.
+  const territorio = CHAPTERS.find((c) => c.id === "territorio").state;
+  const out = applyLiveFactor(territorio, liveWeatherFactor(65));
+  assert.equal(out.ripples, territorio.ripples);
+  assert.equal(out.condensation, territorio.condensation);
+  assert.equal(out.drip, territorio.drip);
 });

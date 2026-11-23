@@ -42,7 +42,10 @@ test("los metadatos son los del sitio, no los del starter", async () => {
   const html = await renderHome();
   assert.doesNotMatch(html, /Starter Project/i);
   assert.doesNotMatch(html, /A clean starting point/i);
-  assert.match(html, /<title>[^<]*Puerto Cisnes[^<]*<\/title>/i);
+  // El título lleva la keyword de mayor intención de negocio (hostales),
+  // no solo el nombre del pueblo — es lo que la gente escribe en Google.
+  assert.match(html, /<title>[^<]*TallerZur[^<]*<\/title>/i);
+  assert.match(html, /<title>[^<]*Aysén[^<]*<\/title>/i);
   assert.match(html, /<meta[^>]+name=["']description["'][^>]+content=["'][^"']{80,}/i,
     "la descripción tiene que ser real, no un marcador");
 });
@@ -60,7 +63,11 @@ test("hay datos estructurados con las coordenadas correctas", async () => {
   const match = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>(.*?)<\/script>/is);
   assert.ok(match, "falta el JSON-LD");
   const data = JSON.parse(match[1]);
-  assert.equal(data["@type"], "TouristDestination");
+  // Pivote de identidad: el sitio pasó de ser un destino turístico a ser la
+  // página oficial de TallerZur, el estudio que lo construyó — mismo lugar,
+  // mismas coordenadas, otro tipo de negocio.
+  assert.equal(data["@type"], "ProfessionalService");
+  assert.equal(data.name, "TallerZur");
   // Las anteriores (45°24' S) eran las de Puerto Aysén, ~70 km al sur.
   assert.ok(data.geo.latitude > -44.9 && data.geo.latitude < -44.6,
     `la latitud debe ser la de Puerto Cisnes, es ${data.geo.latitude}`);
@@ -84,4 +91,11 @@ test("la sección Nosotros no depende de GSAP para verse", async () => {
   // El clip-path inicial vivía en el CSS y nunca se abría sin GSAP.
   assert.doesNotMatch(html, /circle\(8% at 50% 52%\)/,
     "el estado inicial de la animación no puede vivir en el CSS");
+});
+
+test("el contacto es el real de TallerZur, no el placeholder de Puerto Cisnes", async () => {
+  const html = await renderHome();
+  assert.doesNotMatch(html, /hola@puertocisnes\.cl/, "ese buzón no existe, era el placeholder del destino turístico");
+  assert.match(html, /hola@tallerzur\.cl/i);
+  assert.match(html, /wa\.me\/56940068228/);
 });

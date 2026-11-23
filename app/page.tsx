@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import WeatherLayer from "@/components/WeatherLayer";
-import { media, REMOTE_IMAGE_ORIGIN } from "@/lib/media";
+import { media, REMOTE_IMAGE_ORIGIN, PORTFOLIO, portfolioShot, PORTFOLIO_IMAGE_ORIGIN } from "@/lib/media";
+import { SITE_URL } from "@/lib/site";
+
+const WHATSAPP_URL = "https://wa.me/56940068228?text=Hola%20TallerZur,%20quiero%20una%20p%C3%A1gina%20web";
+const CONTACT_EMAIL = "hola@tallerzur.cl";
 
 /**
  * Coordenadas de Puerto Cisnes.
@@ -19,28 +23,34 @@ const COORDS = {
   decimal: { lat: -44.7400, lon: -72.6967 },
 };
 
+/**
+ * Las tres líneas de trabajo reales de TallerZur, escritas con la misma voz
+ * específica del resto del sitio — nada de "soluciones digitales de
+ * vanguardia". La imagen de fondo se queda siendo el paisaje: el oficio pasa
+ * por debajo, no lo reemplaza.
+ */
 const projects = [
   {
     number: "01",
-    eyebrow: "Bosque siempreverde",
-    title: "La lluvia no interrumpe el paisaje. Lo crea.",
-    text: "Coigües, tepas, helechos y musgos guardan el agua como una memoria antigua. Aquí, caminar lento es otra forma de escuchar.",
+    eyebrow: "Desarrollo web",
+    title: "Un sitio que carga incluso con la señal del sur.",
+    text: "Landing pages, sitios y tiendas a medida — livianos, rápidos y pensados para vender desde el primer día, no para ganar premios de diseño.",
     image: media.bosqueHelechos,
     tone: "forest",
   },
   {
     number: "02",
-    eyebrow: "Canal Puyuhuapi",
-    title: "El mar entra a la montaña y todo queda en silencio.",
-    text: "Las mareas dibujan la costa de Puerto Cisnes. Entre neblina y cumbres, el agua refleja una Patagonia que todavía conserva su ritmo original.",
+    eyebrow: "Mantenimiento",
+    title: "Un sitio abandonado se nota antes que uno mal hecho.",
+    text: "Actualizaciones, respaldos y seguridad sin tickets eternos. Si algo falla, hablas con quien lo construyó, no con un formulario.",
     image: media.aguaCanal,
     tone: "water",
   },
   {
     number: "03",
-    eyebrow: "Ruta austral",
-    title: "Llegar también es parte de la experiencia.",
-    text: "Desde la Carretera Austral, un desvío de treinta y cinco kilómetros baja entre ríos y cascadas hasta el canal. Cada curva anticipa un lugar apartado de lo evidente.",
+    eyebrow: "Servicios digitales",
+    title: "Reservas, catálogos y pagos, sin depender de una sola app.",
+    text: "Herramientas hechas a medida de tu operación: lo que tu negocio necesita para crecer, no una plantilla genérica con tu logo encima.",
     image: media.heroFiordo,
     tone: "road",
   },
@@ -51,16 +61,34 @@ const sectionLinks = [
   { id: "esencia", label: "Esencia", number: "02" },
   { id: "territorio", label: "Territorio", number: "03" },
   { id: "nosotros", label: "Nosotros", number: "04" },
-  { id: "bosque", label: "Bosque", number: "05" },
+  { id: "bosque", label: "Proyectos", number: "05" },
   { id: "llegar", label: "Llegar", number: "06" },
 ];
 
+/**
+ * Comunas reales de la Región de Aysén — no toda la región de golpe. Google
+ * y quien busca escriben el nombre del pueblo, no "Región de Aysén" (ver
+ * src/content/blog/seo-local-como-aparecer-en-google.md en /tallerzur: "un
+ * turista no escribe 'hospedaje turístico de calidad en la Región de
+ * Aysén', escribe 'hostal Puerto Cisnes'"). `areaServed` lista las comunas
+ * de mayor población / búsqueda primero.
+ */
+const AYSEN_COMUNAS = ["Coyhaique", "Puerto Aysén", "Puerto Cisnes", "Chile Chico", "Cochrane"];
+
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "TouristDestination",
-  name: "Puerto Cisnes",
+  "@type": "ProfessionalService",
+  name: "TallerZur",
+  url: SITE_URL,
   description:
-    "Territorio de bosque siempreverde, lluvia y canales en la Región de Aysén, Patagonia chilena.",
+    "Desarrollo web, mantenimiento y servicios digitales para hostales, restaurantes, peluquerías y hoteles de la Región de Aysén. Hecho en Puerto Cisnes, Patagonia chilena.",
+  email: CONTACT_EMAIL,
+  telephone: "+56940068228",
+  priceRange: "$150.000 - $500.000 CLP",
+  areaServed: [
+    { "@type": "AdministrativeArea", name: "Región de Aysén" },
+    ...AYSEN_COMUNAS.map((name) => ({ "@type": "City", name })),
+  ],
   geo: {
     "@type": "GeoCoordinates",
     latitude: COORDS.decimal.lat,
@@ -72,6 +100,55 @@ const jsonLd = {
     addressRegion: "Región de Aysén",
     addressCountry: "CL",
   },
+  hasOfferCatalog: {
+    "@type": "OfferCatalog",
+    name: "Servicios de TallerZur",
+    itemListElement: projects.map((project) => ({
+      "@type": "Offer",
+      itemOffered: {
+        "@type": "Service",
+        name: project.eyebrow,
+        description: project.text,
+        areaServed: "Región de Aysén, Chile",
+        provider: { "@type": "ProfessionalService", name: "TallerZur" },
+      },
+    })),
+  },
+};
+
+/**
+ * Preguntas reales, con respuestas honestas — no relleno para SEO. El
+ * markup FAQPage solo es válido (y solo vale la pena) si corresponde a
+ * contenido que la página también muestra; por eso vive junto al bloque
+ * visible en "Llegar", no suelto en el `<head>`.
+ */
+const faq = [
+  {
+    q: "¿Cuánto cuesta una página web para mi hostal, restaurante o peluquería en Aysén?",
+    a: "Una landing page profesional parte desde $150.000 CLP, un sitio completo desde $300.000 y una tienda online desde $500.000. Sin letra chica.",
+  },
+  {
+    q: "¿Sirve una página web si ya tengo Instagram o WhatsApp Business?",
+    a: "Sí — Instagram y WhatsApp dependen de un algoritmo y no aparecen en Google. Una página web es tuya, aparece en las búsquedas locales y es la base de todo lo demás.",
+  },
+  {
+    q: "¿El sitio funciona bien con la conexión de la Patagonia?",
+    a: "Lo construimos liviano a propósito: sabemos que la señal falla y que tu cliente te busca desde el celular con dos barras.",
+  },
+  {
+    q: "¿Trabajan con negocios fuera de Puerto Cisnes?",
+    a: "Sí, con toda la Región de Aysén — Coyhaique, Puerto Aysén, Chile Chico, Cochrane y más. La distancia no es un problema.",
+  },
+];
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faq.map(({ q, a }) => ({
+    "@type": "Question",
+    name: q,
+    acceptedAnswer: { "@type": "Answer", text: a },
+  })),
 };
 
 export default function Home() {
@@ -172,7 +249,7 @@ export default function Home() {
         gsap.registerPlugin(ScrollTrigger);
         const ctx = gsap.context(() => {
           const hero = gsap.timeline({
-            scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom bottom", scrub: 1.25 },
+            scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom bottom", scrub: .7 },
           });
           hero
             .fromTo(".hero-image", { scale: 1.14, yPercent: -4.5 }, { scale: 1.035, yPercent: 4.5, duration: 1, ease: "none" }, 0)
@@ -183,7 +260,7 @@ export default function Home() {
 
           gsap.fromTo(".manifesto-copy p", { opacity: .12, y: 75 }, {
             opacity: 1, y: 0, stagger: .1, ease: "power3.out",
-            scrollTrigger: { trigger: ".manifesto-copy", start: "top 82%", end: "bottom 55%", scrub: .9 },
+            scrollTrigger: { trigger: ".manifesto-copy", start: "top 82%", end: "bottom 55%", scrub: .6 },
           });
 
           gsap.utils.toArray<HTMLElement>(".manifesto-photo").forEach((photo, index) => {
@@ -194,7 +271,7 @@ export default function Home() {
               yPercent: index % 2 ? 12 : -12,
               rotate: index === 1 ? -1 : 1,
               ease: "none",
-              scrollTrigger: { trigger: ".manifesto", start: "top bottom", end: "bottom top", scrub: 1.3 + index * .2 },
+              scrollTrigger: { trigger: ".manifesto", start: "top bottom", end: "bottom top", scrub: .8 + index * .1 },
             });
           });
 
@@ -206,15 +283,15 @@ export default function Home() {
             const copy = panel.querySelector(".project-copy");
             gsap.fromTo(mediaEl, { clipPath: "inset(4% 2% 4% 2%)", scale: .98, y: 16 }, {
               clipPath: "inset(0% 0% 0% 0%)", scale: 1, y: 0, ease: "none",
-              scrollTrigger: { trigger: panel, start: "top bottom", end: "top top", scrub: 2.2 },
+              scrollTrigger: { trigger: panel, start: "top bottom", end: "top top", scrub: .9 },
             });
             gsap.fromTo(image, { scale: 1.16, yPercent: -5 }, {
               scale: 1.02, yPercent: 5, ease: "none",
-              scrollTrigger: { trigger: panel, start: "top bottom", end: "bottom top", scrub: 1.55 },
+              scrollTrigger: { trigger: panel, start: "top bottom", end: "bottom top", scrub: .8 },
             });
             gsap.fromTo(copy, { y: 48, opacity: .2 }, {
               y: 0, opacity: 1, ease: "power3.out",
-              scrollTrigger: { trigger: panel, start: "top 76%", end: "top 22%", scrub: 1.8 },
+              scrollTrigger: { trigger: panel, start: "top 76%", end: "top 22%", scrub: .7 },
             });
             if (index < panels.length - 1) {
               // Sin `blur`: animarlo con scrub en tres paneles a pantalla
@@ -224,35 +301,29 @@ export default function Home() {
                 scale: 1, y: 0, opacity: 1, filter: "brightness(1) saturate(1)",
               }, {
                 scale: .972, y: -10, opacity: .92, filter: "brightness(.78) saturate(.86)", ease: "none",
-                scrollTrigger: { trigger: panels[index + 1], start: "top bottom", end: "top top", scrub: 2.35 },
+                scrollTrigger: { trigger: panels[index + 1], start: "top bottom", end: "top top", scrub: .9 },
               });
             }
           });
 
-          gsap.fromTo(".interlude-image img", { yPercent: -9, scale: 1.12 }, {
-            yPercent: 9, scale: 1, ease: "none",
-            scrollTrigger: { trigger: ".interlude", start: "top bottom", end: "bottom top", scrub: 1.1 },
-          });
-          gsap.fromTo(".interlude-word", { xPercent: -8 }, {
-            xPercent: 8, ease: "none",
-            scrollTrigger: { trigger: ".interlude", start: "top bottom", end: "bottom top", scrub: 1.1 },
-          });
-
+          // El clip-path circular de `.company` era puro efecto sin lectura
+          // territorial (REVISION §5.2): se reemplaza por una entrada de luz
+          // más simple y barata de componer.
           const company = gsap.timeline({
-            scrollTrigger: { trigger: ".company", start: "top bottom", end: "bottom bottom", scrub: 1.7 },
+            scrollTrigger: { trigger: ".company", start: "top bottom", end: "bottom bottom", scrub: .8 },
           });
           company
-            .fromTo(".company-bg", { clipPath: "circle(5% at 50% 49%)", scale: .88 }, { clipPath: "circle(76% at 50% 49%)", scale: 1, ease: "none" }, 0)
-            .fromTo(".company-bg img", { scale: 1.24, yPercent: -7 }, { scale: 1.02, yPercent: 5, ease: "none" }, 0)
-            .fromTo(".company-emblem", { opacity: 0, scale: .74, rotate: -8 }, { opacity: 1, scale: 1, rotate: 0, ease: "power2.out" }, .14)
-            .fromTo(".company-text > *", { opacity: 0, y: 34 }, { opacity: 1, y: 0, stagger: .055, ease: "power2.out" }, .2)
-            .fromTo(".company-coordinate", { opacity: 0 }, { opacity: 1, ease: "none" }, .34)
-            .to(".company-bg-shade", { opacity: .63, ease: "none" }, .42);
+            .fromTo(".company-bg", { opacity: 0, scale: 1.05 }, { opacity: 1, scale: 1, ease: "none" }, 0)
+            .fromTo(".company-bg img", { scale: 1.16, yPercent: -6 }, { scale: 1.02, yPercent: 4, ease: "none" }, 0)
+            .fromTo(".company-emblem", { opacity: 0, scale: .8, rotate: -6 }, { opacity: 1, scale: 1, rotate: 0, ease: "power2.out" }, .12)
+            .fromTo(".company-text > *", { opacity: 0, y: 28 }, { opacity: 1, y: 0, stagger: .05, ease: "power2.out" }, .18)
+            .fromTo(".company-coordinate", { opacity: 0 }, { opacity: 1, ease: "none" }, .3)
+            .to(".company-bg-shade", { opacity: .58, ease: "none" }, .38);
 
           gsap.utils.toArray<HTMLElement>(".gallery-shot").forEach((shot, index) => {
             gsap.fromTo(shot.querySelector("img"), { yPercent: -9, scale: 1.1 }, {
               yPercent: 9, scale: 1.01, ease: "none",
-              scrollTrigger: { trigger: shot, start: "top bottom", end: "bottom top", scrub: 1.1 + index * .15 },
+              scrollTrigger: { trigger: shot, start: "top bottom", end: "bottom top", scrub: .7 + index * .1 },
             });
           });
 
@@ -317,9 +388,14 @@ export default function Home() {
   return (
     <>
       <link rel="preconnect" href={REMOTE_IMAGE_ORIGIN} crossOrigin="" />
+      <link rel="preconnect" href={PORTFOLIO_IMAGE_ORIGIN} crossOrigin="" />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
 
       <div className="loader" aria-hidden="true">
@@ -333,7 +409,7 @@ export default function Home() {
       <div ref={progressRef} className="progress" aria-hidden="true" />
 
       <header className="header">
-        <a className="brand" href="#top" aria-label="Puerto Cisnes, volver al inicio"><span>PUERTO</span><span>CISNES</span></a>
+        <a className="brand" href="#top" aria-label="TallerZur, volver al inicio"><span>TALLER</span><span>ZUR</span></a>
         {/* Sin aria-live: cambiaba en cada scroll y el lector de pantalla se
             interrumpía a sí mismo anunciando cada sección. Es decorativo. */}
         <p className="header-context">
@@ -407,8 +483,8 @@ export default function Home() {
           <div className="manifesto-note"><span>( el paisaje interior )</span><p>Entre la cordillera y el Pacífico, Puerto Cisnes guarda una forma más quieta de estar en el mundo.</p></div>
         </section>
 
-        <section id="territorio" className="projects" aria-label="Territorios de Puerto Cisnes">
-          <div className="projects-heading"><p className="section-label">territorio</p><h2>Tres maneras<br />de entrar al paisaje.</h2><p>La naturaleza no es un fondo.<br />Es quien marca el ritmo.</p></div>
+        <section id="territorio" className="projects" aria-label="Líneas de trabajo de TallerZur">
+          <div className="projects-heading"><p className="section-label">territorio</p><h2>Tres maneras<br />de sostener un sitio.</h2><p>El código no es un adorno.<br />Es lo que sostiene el negocio.</p></div>
           <div className="projects-stack">
             {projects.map((project) => (
               <article className={`project-panel project-${project.tone}`} key={project.number}>
@@ -417,6 +493,7 @@ export default function Home() {
                   <div className="project-copy">
                     <div className="project-heading"><span>{project.number}</span><p>{project.eyebrow}</p></div>
                     <h3>{project.title}</h3><p className="project-text">{project.text}</p>
+                    <a className="text-link" href="#llegar">Cotizar este servicio<i aria-hidden="true">↗</i></a>
                   </div>
                 </div>
               </article>
@@ -431,41 +508,63 @@ export default function Home() {
             <div className="company-content">
               <div className="company-emblem" aria-hidden="true"><span>P</span><i /><span>C</span></div>
               <div className="company-text">
-                <span className="company-kicker">( una hospitalidad nacida del paisaje )</span>
+                <span className="company-kicker">( un estudio nacido del paisaje )</span>
                 <h2 className="company-title" id="company-title">Quiénes somos</h2>
-                <p>Somos agua, bosque y comunidad. Un territorio modelado por la lluvia, donde la mesa, el descanso y el paisaje comparten un mismo ritmo.</p>
-                <p>En Puerto Cisnes, recibir es abrir una puerta al sur: cocina de origen, refugio sereno y una relación honesta con cada estación.</p>
+                <p>Somos TallerZur: desarrollo web hecho en Puerto Cisnes para negocios de la Región de Aysén. Sabemos que la señal falla y que tu cliente busca &ldquo;hostal en Coyhaique&rdquo; desde el celular con dos barras. Por eso construimos distinto.</p>
+                <p>La lluvia que ves en esta página es la de ahora mismo, afuera de donde escribimos el código. Si aquí llueve, en el sitio llueve.</p>
               </div>
             </div>
             <p className="company-coordinate"><span>{COORDS.label.lat}</span><i /><span>{COORDS.label.lon}</span></p>
           </div>
         </section>
 
-        <section id="bosque" className="forest-gallery" aria-label="Bosques lluviosos del sur de Chile">
-          <div className="gallery-intro"><p className="section-label">bosque lluvioso</p><h2>La humedad<br />también tiene memoria.</h2></div>
-          <figure className="gallery-shot gallery-shot-wide"><img src={media.queulatNuboso.src} alt={media.queulatNuboso.alt} loading="lazy" /><figcaption>{media.queulatNuboso.caption}</figcaption></figure>
-          <figure className="gallery-shot gallery-shot-tall"><img src={media.bosqueValdiviano.src} alt={media.bosqueValdiviano.alt} loading="lazy" /><figcaption>{media.bosqueValdiviano.caption}</figcaption></figure>
-          <figure className="gallery-shot gallery-shot-small"><img src={media.queulatEncantado.src} alt={media.queulatEncantado.alt} loading="lazy" /><figcaption>{media.queulatEncantado.caption}</figcaption></figure>
-        </section>
-
-        <section className="interlude" aria-label="Una invitación a detenerse">
-          <div className="interlude-word" aria-hidden="true">CISNES</div>
-          <div className="interlude-image"><img src={media.bosqueHelechos.src} alt="" width={1122} height={1402} loading="lazy" /></div>
-          <blockquote>“Aquí la distancia<br />no separa.<br />Devuelve perspectiva.”</blockquote>
+        <section id="bosque" className="forest-gallery" aria-label="Proyectos en producción de TallerZur">
+          <div className="gallery-intro"><p className="section-label">proyectos</p><h2>Esto no<br />es un mockup.</h2></div>
+          <div className="gallery-grid">
+            {PORTFOLIO.map((project, index) => {
+              const shotClass = index === 0 ? "gallery-shot-wide" : index === 1 ? "gallery-shot-tall" : "gallery-shot-small";
+              return (
+                <a
+                  key={project.url}
+                  className={`gallery-shot ${shotClass}`}
+                  href={project.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <img src={portfolioShot(project.url)} alt={`Captura de ${project.name}`} loading="lazy" />
+                  <span className="gallery-caption">{project.name} · {project.desc}</span>
+                </a>
+              );
+            })}
+          </div>
         </section>
 
         <section id="llegar" className="arrival">
-          <div className="arrival-top"><p className="section-label">la invitación</p><span>Puerto Cisnes · Chile</span></div>
-          <h2>Vuelve<br />al sur.</h2>
+          <div className="arrival-top"><p className="section-label">hablemos</p><span>Puerto Cisnes, Aysén · Chile</span></div>
+          <h2>Construyamos<br />desde el sur.</h2>
           <div className="arrival-bottom">
-            <p>Trae tiempo.<br />El resto lo pone el paisaje.</p>
-            <a className="circle-link" href="mailto:hola@puertocisnes.cl"><span>Escribir</span><i aria-hidden="true">↗</i></a>
+            <p>
+              Sin tickets eternos.<br />Respondemos casi siempre el mismo día.
+              <br /><a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+            </p>
+            <a className="circle-link" href={WHATSAPP_URL} target="_blank" rel="noreferrer"><span>Escribir</span><i aria-hidden="true">↗</i></a>
           </div>
+
+          {/* Preguntas reales: el markup FAQPage de arriba solo vale si
+              corresponde a contenido visible, no a datos sueltos en el head. */}
+          <dl className="faq">
+            {faq.map(({ q, a }) => (
+              <div className="faq-item" key={q}>
+                <dt>{q}</dt>
+                <dd>{a}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
       </main>
 
       <footer>
-        <div className="footer-mark">PUERTO CISNES</div>
+        <div className="footer-mark">TALLERZUR</div>
         <div className="photo-credits">
           Fotografías libres:{" "}
           <a href={media.queulatEncantado.credit!.href} target="_blank" rel="noreferrer">{media.queulatEncantado.credit!.name}</a>{" "}
@@ -473,7 +572,7 @@ export default function Home() {
           <a href={media.queulatNuboso.credit!.href} target="_blank" rel="noreferrer">{media.queulatNuboso.credit!.name}</a>{" "}
           · CC BY-SA 4.0.
         </div>
-        <div className="footer-row"><span>© 2026 · Patagonia chilena</span><a href="#top">volver arriba ↑</a></div>
+        <div className="footer-row"><span>© 2026 TallerZur · Puerto Cisnes, Aysén</span><a href="#top">volver arriba ↑</a></div>
       </footer>
     </>
   );
