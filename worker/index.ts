@@ -1,6 +1,7 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { legacyRedirect } from "../lib/redirects";
 
 interface Env {
   ASSETS: Fetcher;
@@ -28,6 +29,15 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+
+    // URLs del sitio anterior (blog Astro): 301 a la sección más cercana.
+    const legacy = legacyRedirect(url.pathname);
+    if (legacy) {
+      return new Response(null, {
+        status: 301,
+        headers: { Location: new URL(legacy, url).toString(), "Cache-Control": "public, max-age=86400" },
+      });
+    }
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
