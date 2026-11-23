@@ -12,7 +12,7 @@
     "build:local": "vinext build",
     "start": "vinext start",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
-    "test:unit": "node --test tests/rendered-html.test.mjs lab/wind-field.test.mjs lab/rain-audio.test.mjs",
+    "test:unit": "node --test tests/rendered-html.test.mjs tests/contacto.test.mjs lab/wind-field.test.mjs lab/rain-audio.test.mjs lab/weather-states.test.mjs",
     "validate:artifact": "bash scripts/validate-artifact.sh",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate"
