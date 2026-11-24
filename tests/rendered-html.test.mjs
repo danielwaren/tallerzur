@@ -240,3 +240,11 @@ test("la etiqueta de servicios coincide con el menú", async () => {
   assert.match(services, /<p class="section-label">servicios<\/p>/);
   assert.doesNotMatch(html, />territorio</);
 });
+
+test("canonical, Open Graph y JSON-LD usan el dominio que no redirige (www)", async () => {
+  const html = await renderHome();
+  assert.match(html, /<link rel="canonical" href="https:\/\/www\.tallerzur\.cl\/?"/);
+  assert.match(html, /property="og:url"[^>]+content="https:\/\/www\.tallerzur\.cl\/?"/);
+  assert.match(html, /property="og:image"[^>]+content="https:\/\/www\.tallerzur\.cl\/images\//);
+  assert.doesNotMatch(html, /https:\/\/tallerzur\.cl/, "tallerzur.cl sin www redirige");
+});

@@ -1,11 +1,9 @@
 /**
- * Un solo lugar para el dominio del sitio.
+ * Un solo lugar para el dominio del sitio: de aquí salen el canonical, el
+ * sitemap, robots, Open Graph y el JSON-LD.
  *
- * Antes vivía duplicado en `app/layout.tsx` y `app/page.tsx` — dos
- * constantes con el mismo valor a mano, la clase de duplicación que se
- * desincroniza el día que alguien cambia una y olvida la otra.
- *
- * TODO: confirmar que este proyecto reemplaza a tallerzur.cl (hoy Astro en
- * Vercel, ver /tallerzur) antes de que el DNS apunte de verdad acá.
+ * Con `www` a propósito: en Vercel, tallerzur.cl redirige (308) a
+ * www.tallerzur.cl. Un canonical que apunta a una URL que redirige es una
+ * señal contradictoria para Google.
  */
-export const SITE_URL = "https://tallerzur.cl";
+export const SITE_URL = "https://www.tallerzur.cl";

@@ -65,7 +65,7 @@ test("el inicio, el sitemap y robots siguen respondiendo 200", async () => {
     assert.equal(response.status, 200, path);
   }
   const sitemap = await (await get("/sitemap.xml")).text();
-  assert.match(sitemap, /<loc>https:\/\/tallerzur\.cl\/?<\/loc>/);
+  assert.match(sitemap, /<loc>https:\/\/www\.tallerzur\.cl\/?<\/loc>/);
   assert.match(sitemap, /<lastmod>2026-11-23/);
 });
 
